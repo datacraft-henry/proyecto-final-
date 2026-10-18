@@ -244,8 +244,12 @@ El detalle y las decisiones del equipo están en [`docs/decisiones.md`](docs/dec
 - [x] Desarrollar el análisis exploratorio (`notebooks/02_eda_graficos.ipynb`).
 - [x] Entrenar y evaluar modelos (`src/training.py`, ver `docs/decisiones_modelos.md`).
 - [x] Calibrar el modelo principal y definir niveles de riesgo (`src/umbral.py`).
-- [ ] Construir la demo en Streamlit y la API (Sprint 2).
-- [ ] Documentar resultados y conclusiones.
+- [x] Construir la demo en Streamlit y la API
+- [ ] Sumar las features del EDA de Mathias (ruta, carga del vendedor, feriados).
+- [ ] Usar el target único en el script de unificación.
+- [ ] Construir el tablero de Power BI.
+- [ ] Monitorear el volumen del nivel de riesgo alto.
+- [ ] Escribir el informe final y preparar la defensa.
 
 ## Autoría
 
