@@ -176,6 +176,19 @@ def test_seller_recent_load_counts_only_previous_windows():
     assert load.loc["o31", "seller_recent_approved_orders_30d"] == 30
 
 
+def test_seller_history_builder_is_registered():
+    builders = {builder.name: builder for builder in FEATURE_BUILDERS}
+
+    assert "historial_vendedor" in builders
+    assert builders["historial_vendedor"].numeric == (
+        "seller_prev_orders",
+        "seller_prev_late_rate",
+    )
+
+    numeric, _ = model_feature_lists()
+    assert {"seller_prev_orders", "seller_prev_late_rate"} <= set(numeric)
+
+
 def test_seller_recent_load_does_not_use_delivery_outcomes():
     tables = _seller_tables(12)
     before = _seller_load(tables)

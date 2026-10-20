@@ -330,6 +330,11 @@ FEATURE_BUILDERS: list[FeatureBuilder] = [
     ),
     FeatureBuilder("producto", product_features, categorical=("main_category",)),
     FeatureBuilder(
+        "historial_vendedor",
+        seller_history_features,
+        numeric=("seller_prev_orders", "seller_prev_late_rate"),
+    ),
+    FeatureBuilder(
         "carga_reciente_vendedor",
         seller_recent_load_features,
         numeric=(
