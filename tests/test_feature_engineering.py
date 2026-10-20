@@ -11,6 +11,8 @@ from src.feature_engineering import (
     product_features,
     route_features,
     seller_history_features,
+    seller_recent_load_features,
+    holiday_features,
 )
 from src.features import PREDICTION_TIME_COL, leaky_columns
 from src.target import TARGET_COL
@@ -109,6 +111,32 @@ def _history(tables):
     return seller_history_features(FeatureContext(base=base, tables=tables)).set_index("order_id")
 
 
+def _seller_load(tables):
+    base = tables["orders"][["order_id"]].assign(
+        **{PREDICTION_TIME_COL: tables["orders"]["order_approved_at"]}
+    )
+    return seller_recent_load_features(
+        FeatureContext(base=base, tables=tables)
+    ).set_index("order_id")
+
+
+def _holiday_calendar(tables):
+    base = pd.DataFrame(
+        {
+            "order_id": ["feriado", "dia_normal"],
+            PREDICTION_TIME_COL: [
+                pd.Timestamp("2018-09-07 10:00"),
+                pd.Timestamp("2018-09-08 10:00"),
+            ],
+        }
+    )
+
+    return holiday_features(
+        FeatureContext(base=base, tables=tables)
+    ).set_index("order_id")
+
+
+
 def test_seller_history_counts_only_orders_delivered_before_prediction():
     history = _history(_seller_tables(12))
     # o4 se predice el día 4; solo o0 (entregado el día 3) llegó antes
@@ -119,6 +147,50 @@ def test_seller_history_counts_only_orders_delivered_before_prediction():
     late_order = f"o{MIN_SELLER_HISTORY + 3}"
     assert history.loc[late_order, "seller_prev_late_rate"] == pytest.approx(0.6)
 
+
+def test_seller_recent_load_counts_only_previous_30_days():
+    load = _seller_load(_seller_tables(35))
+    feature = "seller_recent_approved_orders_30d"
+
+    assert load.loc["o0", feature] == 0
+    assert load.loc["o4", feature] == 4
+    assert load.loc["o30", feature] == 30
+    assert load.loc["o31", feature] == 30
+
+
+def test_seller_recent_load_does_not_use_delivery_outcomes():
+    tables = _seller_tables(12)
+    before = _seller_load(tables)
+
+    changed_orders = tables["orders"].assign(
+        order_delivered_customer_date=pd.Timestamp("2099-01-01"),
+        order_estimated_delivery_date=pd.Timestamp("2016-01-01"),
+    )
+    after = _seller_load({**tables, "orders": changed_orders})
+
+    pd.testing.assert_frame_equal(before, after)
+
+
+def test_holiday_features_marks_national_holiday(full_tables):
+    result = _holiday_calendar(full_tables)
+
+    assert result.loc["feriado", "is_national_holiday"] == 1
+    assert result.loc["dia_normal", "is_national_holiday"] == 0
+
+
+def test_holiday_features_do_not_use_delivery_outcomes(full_tables):
+    before = _holiday_calendar(full_tables)
+
+    changed_tables = {
+        **full_tables,
+        "orders": full_tables["orders"].assign(
+            order_delivered_customer_date=pd.Timestamp("2099-01-01"),
+            order_estimated_delivery_date=pd.Timestamp("2016-01-01"),
+        ),
+    }
+    after = _holiday_calendar(changed_tables)
+
+    pd.testing.assert_frame_equal(before, after)
 
 def test_seller_history_ignores_future_outcomes():
     """Cambiar el resultado de pedidos futuros no puede cambiar las features de un pedido anterior."""
@@ -137,7 +209,7 @@ def test_seller_history_ignores_future_outcomes():
 
 def test_route_and_product_builders_return_one_row_per_order(full_tables):
     context, _ = _context(full_tables)
-    for build in (route_features, product_features):
+    for build in (route_features, product_features, seller_recent_load_features, holiday_features):
         assert build(context)["order_id"].is_unique
 
 

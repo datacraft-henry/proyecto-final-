@@ -16,11 +16,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+import holidays
 import numpy as np
 import pandas as pd
 
+
 from src.data_loading import RAW_DIR
 from src.features import (
+    APPROVED_COL,
     CATEGORICAL_FEATURES,
     DEFAULT_ANCHOR,
     PREDICTION_TIME_COL,
@@ -34,7 +37,8 @@ EARTH_RADIUS_KM = 6371.0
 # Extremos del territorio de Brasil (con un margen chico), en grados
 BRAZIL_LAT_RANGE = (-33.8, 5.3)
 BRAZIL_LNG_RANGE = (-74.0, -34.7)
-MIN_SELLER_HISTORY = 5  # con menos pedidos previos la tasa del vendedor es ruido
+MIN_SELLER_HISTORY = 5 # con menos pedidos previos la tasa del vendedor es ruido
+SELLER_LOAD_WINDOW_DAYS = 30
 
 REGIONS = {
     "Norte": ["AC", "AM", "AP", "PA", "RO", "RR", "TO"],
@@ -201,6 +205,76 @@ def seller_history_features(context: FeatureContext) -> pd.DataFrame:
     )
 
 
+def seller_recent_load_features(context: FeatureContext) -> pd.DataFrame:
+    """Pedidos aprobados para el vendedor principal en los 30 días previos.
+
+    La ventana es [prediction_time - 30 días, prediction_time): excluye el
+    pedido que se está prediciendo y cualquier pedido aprobado en el mismo
+    instante. No usa entrega ni retraso de otros pedidos.
+    """
+    tables = context.tables
+    main_seller = _main_item(tables)[["order_id", "seller_id"]]
+
+    events = (
+        tables["orders"][["order_id", APPROVED_COL]]
+        .merge(main_seller, on="order_id", how="inner")
+        .assign(**{APPROVED_COL: lambda d: pd.to_datetime(d[APPROVED_COL], errors="coerce")})
+        .dropna(subset=[APPROVED_COL, "seller_id"])
+    )
+
+    queries = (
+        context.base[["order_id", PREDICTION_TIME_COL]]
+        .merge(main_seller, on="order_id", how="left")
+        .assign(
+            **{
+                PREDICTION_TIME_COL: lambda d: pd.to_datetime(
+                    d[PREDICTION_TIME_COL], errors="coerce"
+                )
+            }
+        )
+        .reset_index(drop=True)
+    )
+
+    result = queries[["order_id"]].copy()
+    result["seller_recent_approved_orders_30d"] = 0
+
+    for seller_id, indexes in queries.groupby("seller_id").groups.items():
+        approved = np.sort(
+            events.loc[
+                events["seller_id"].eq(seller_id), APPROVED_COL
+            ].to_numpy(dtype="datetime64[ns]")
+        )
+        times = queries.loc[indexes, PREDICTION_TIME_COL].to_numpy(
+            dtype="datetime64[ns]"
+        )
+        start = times - np.timedelta64(SELLER_LOAD_WINDOW_DAYS, "D")
+
+        result.loc[indexes, "seller_recent_approved_orders_30d"] = (
+            np.searchsorted(approved, times, side="left")
+            - np.searchsorted(approved, start, side="left")
+        )
+
+    return result
+
+
+def holiday_features(context: FeatureContext) -> pd.DataFrame:
+    """Indica si la aprobación ocurrió en un feriado nacional de Brasil.
+
+    Solo usa prediction_time. No incorpora feriados estatales o municipales
+    porque esa información no está disponible de forma uniforme para todos
+    los pedidos.
+    """
+    prediction_date = pd.to_datetime(
+        context.base[PREDICTION_TIME_COL], errors="coerce"
+    ).dt.normalize()
+
+    years = prediction_date.dropna().dt.year.unique().tolist()
+    holiday_dates = set(holidays.country_holidays("BR", years=years))
+
+    return context.base[["order_id"]].assign(
+        is_national_holiday=prediction_date.dt.date.isin(holiday_dates).astype(int)
+    )
+
 FEATURE_BUILDERS: list[FeatureBuilder] = [
     FeatureBuilder(
         "ruta",
@@ -209,10 +283,20 @@ FEATURE_BUILDERS: list[FeatureBuilder] = [
         categorical=("customer_region", "seller_region", "cross_region"),
     ),
     FeatureBuilder("producto", product_features, categorical=("main_category",)),
-    FeatureBuilder(
+        FeatureBuilder(
         "historial_vendedor",
         seller_history_features,
         numeric=("seller_prev_orders", "seller_prev_late_rate"),
+    ),
+    FeatureBuilder(
+        "carga_reciente_vendedor",
+        seller_recent_load_features,
+        numeric=("seller_recent_approved_orders_30d",),
+    ),
+        FeatureBuilder(
+        "feriados",
+        holiday_features,
+        numeric=("is_national_holiday",),
     ),
 ]
 
