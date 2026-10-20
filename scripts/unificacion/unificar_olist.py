@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from src.target import TARGET_COL, build_target
+from src.unificacion import agregar_target
+from src.target import TARGET_COL
 
 SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("olist_limpio")
@@ -98,17 +99,6 @@ d["dias_a_transportista"] = (d.order_delivered_carrier_date - d.order_purchase_t
 d["dias_entrega_total"] = (d.order_delivered_customer_date - d.order_purchase_timestamp).dt.total_seconds() / 86400
 d["dias_entrega_estimada"] = (d.order_estimated_delivery_date - d.order_purchase_timestamp).dt.total_seconds() / 86400
 d["dias_retraso"] = (d.order_delivered_customer_date - d.order_estimated_delivery_date).dt.total_seconds() / 86400
-
-def agregar_target(pedidos, orders):
-    """Agrega la columna pedido_retrasado a la tabla de órdenes.
-
-    Se descartan los pedidos sin estado "delivered" o sin fecha de entrega o
-    estimada, porque en ellos el retraso no se puede observar.
-    """
-    
-    etiquetados = build_target(orders)
-    solo_target = etiquetados[["order_id", TARGET_COL]]
-    return pedidos.merge(solo_target, on="order_id", how="left")
 
 d = agregar_target(d, orders)  # merge devuelve una tabla nueva: se re-apunta d para que se exporte con el target
 fo = d  # merge devuelve una tabla nueva: se re-apunta fo para que se exporte con el target
