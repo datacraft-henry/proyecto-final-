@@ -123,9 +123,16 @@ def _seller_load(tables):
 def _holiday_calendar(tables):
     base = pd.DataFrame(
         {
-            "order_id": ["feriado", "dia_normal"],
+            "order_id": [
+                "feriado_actual",
+                "previo_navidad",
+                "cruce_anio",
+                "dia_normal",
+            ],
             PREDICTION_TIME_COL: [
                 pd.Timestamp("2018-09-07 10:00"),
+                pd.Timestamp("2018-12-24 10:00"),
+                pd.Timestamp("2018-12-27 10:00"),
                 pd.Timestamp("2018-09-08 10:00"),
             ],
         }
@@ -134,7 +141,6 @@ def _holiday_calendar(tables):
     return holiday_features(
         FeatureContext(base=base, tables=tables)
     ).set_index("order_id")
-
 
 
 def test_seller_history_counts_only_orders_delivered_before_prediction():
@@ -148,14 +154,39 @@ def test_seller_history_counts_only_orders_delivered_before_prediction():
     assert history.loc[late_order, "seller_prev_late_rate"] == pytest.approx(0.6)
 
 
-def test_seller_recent_load_counts_only_previous_30_days():
+def test_seller_recent_load_counts_only_previous_windows():
     load = _seller_load(_seller_tables(35))
-    feature = "seller_recent_approved_orders_30d"
 
-    assert load.loc["o0", feature] == 0
-    assert load.loc["o4", feature] == 4
-    assert load.loc["o30", feature] == 30
-    assert load.loc["o31", feature] == 30
+    for days in (7, 14, 30):
+        feature = f"seller_recent_approved_orders_{days}d"
+        assert load.loc["o0", feature] == 0
+        assert load.loc["o4", feature] == 4
+
+    assert load.loc["o7", "seller_recent_approved_orders_7d"] == 7
+
+    assert load.loc["o14", "seller_recent_approved_orders_7d"] == 7
+    assert load.loc["o14", "seller_recent_approved_orders_14d"] == 14
+
+    assert load.loc["o30", "seller_recent_approved_orders_7d"] == 7
+    assert load.loc["o30", "seller_recent_approved_orders_14d"] == 14
+    assert load.loc["o30", "seller_recent_approved_orders_30d"] == 30
+
+    assert load.loc["o31", "seller_recent_approved_orders_7d"] == 7
+    assert load.loc["o31", "seller_recent_approved_orders_14d"] == 14
+    assert load.loc["o31", "seller_recent_approved_orders_30d"] == 30
+
+
+def test_seller_history_builder_is_registered():
+    builders = {builder.name: builder for builder in FEATURE_BUILDERS}
+
+    assert "historial_vendedor" in builders
+    assert builders["historial_vendedor"].numeric == (
+        "seller_prev_orders",
+        "seller_prev_late_rate",
+    )
+
+    numeric, _ = model_feature_lists()
+    assert {"seller_prev_orders", "seller_prev_late_rate"} <= set(numeric)
 
 
 def test_seller_recent_load_does_not_use_delivery_outcomes():
@@ -171,11 +202,19 @@ def test_seller_recent_load_does_not_use_delivery_outcomes():
     pd.testing.assert_frame_equal(before, after)
 
 
-def test_holiday_features_marks_national_holiday(full_tables):
+def test_holiday_features_marks_current_and_future_holidays(full_tables):
     result = _holiday_calendar(full_tables)
 
-    assert result.loc["feriado", "is_national_holiday"] == 1
+    assert result.loc["feriado_actual", "is_national_holiday"] == 1
+    assert result.loc["feriado_actual", "n_national_holidays_next_7d"] == 0
+
+    assert result.loc["previo_navidad", "is_national_holiday"] == 0
+    assert result.loc["previo_navidad", "n_national_holidays_next_7d"] == 1
+
+    assert result.loc["cruce_anio", "n_national_holidays_next_7d"] == 1
+
     assert result.loc["dia_normal", "is_national_holiday"] == 0
+    assert result.loc["dia_normal", "n_national_holidays_next_7d"] == 0
 
 
 def test_holiday_features_do_not_use_delivery_outcomes(full_tables):
@@ -191,6 +230,7 @@ def test_holiday_features_do_not_use_delivery_outcomes(full_tables):
     after = _holiday_calendar(changed_tables)
 
     pd.testing.assert_frame_equal(before, after)
+
 
 def test_seller_history_ignores_future_outcomes():
     """Cambiar el resultado de pedidos futuros no puede cambiar las features de un pedido anterior."""

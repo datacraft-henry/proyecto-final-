@@ -13,6 +13,7 @@ El test anti-fuga recorre FEATURE_BUILDERS y falla si alguna usa columnas prohib
 """
 
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Callable
 
@@ -37,8 +38,9 @@ EARTH_RADIUS_KM = 6371.0
 # Extremos del territorio de Brasil (con un margen chico), en grados
 BRAZIL_LAT_RANGE = (-33.8, 5.3)
 BRAZIL_LNG_RANGE = (-74.0, -34.7)
-MIN_SELLER_HISTORY = 5 # con menos pedidos previos la tasa del vendedor es ruido
-SELLER_LOAD_WINDOW_DAYS = 30
+MIN_SELLER_HISTORY = 5  # con menos pedidos previos la tasa del vendedor es ruido
+SELLER_LOAD_WINDOWS_DAYS = (7, 14, 30)
+HOLIDAY_LOOKAHEAD_DAYS = 7
 
 REGIONS = {
     "Norte": ["AC", "AM", "AP", "PA", "RO", "RR", "TO"],
@@ -206,11 +208,12 @@ def seller_history_features(context: FeatureContext) -> pd.DataFrame:
 
 
 def seller_recent_load_features(context: FeatureContext) -> pd.DataFrame:
-    """Pedidos aprobados para el vendedor principal en los 30 días previos.
+    """Pedidos aprobados para el vendedor principal en ventanas previas.
 
-    La ventana es [prediction_time - 30 días, prediction_time): excluye el
-    pedido que se está prediciendo y cualquier pedido aprobado en el mismo
-    instante. No usa entrega ni retraso de otros pedidos.
+    Para cada ventana de 7, 14 y 30 días se usa
+    [prediction_time - ventana, prediction_time). Así se excluyen el pedido
+    actual y los pedidos aprobados exactamente en el mismo instante. No usa
+    información de entrega ni el resultado de otros pedidos.
     """
     tables = context.tables
     main_seller = _main_item(tables)[["order_id", "seller_id"]]
@@ -218,7 +221,13 @@ def seller_recent_load_features(context: FeatureContext) -> pd.DataFrame:
     events = (
         tables["orders"][["order_id", APPROVED_COL]]
         .merge(main_seller, on="order_id", how="inner")
-        .assign(**{APPROVED_COL: lambda d: pd.to_datetime(d[APPROVED_COL], errors="coerce")})
+        .assign(
+            **{
+                APPROVED_COL: lambda data: pd.to_datetime(
+                    data[APPROVED_COL], errors="coerce"
+                )
+            }
+        )
         .dropna(subset=[APPROVED_COL, "seller_id"])
     )
 
@@ -227,8 +236,8 @@ def seller_recent_load_features(context: FeatureContext) -> pd.DataFrame:
         .merge(main_seller, on="order_id", how="left")
         .assign(
             **{
-                PREDICTION_TIME_COL: lambda d: pd.to_datetime(
-                    d[PREDICTION_TIME_COL], errors="coerce"
+                PREDICTION_TIME_COL: lambda data: pd.to_datetime(
+                    data[PREDICTION_TIME_COL], errors="coerce"
                 )
             }
         )
@@ -236,7 +245,8 @@ def seller_recent_load_features(context: FeatureContext) -> pd.DataFrame:
     )
 
     result = queries[["order_id"]].copy()
-    result["seller_recent_approved_orders_30d"] = 0
+    for days in SELLER_LOAD_WINDOWS_DAYS:
+        result[f"seller_recent_approved_orders_{days}d"] = 0
 
     for seller_id, indexes in queries.groupby("seller_id").groups.items():
         approved = np.sort(
@@ -247,33 +257,69 @@ def seller_recent_load_features(context: FeatureContext) -> pd.DataFrame:
         times = queries.loc[indexes, PREDICTION_TIME_COL].to_numpy(
             dtype="datetime64[ns]"
         )
-        start = times - np.timedelta64(SELLER_LOAD_WINDOW_DAYS, "D")
 
-        result.loc[indexes, "seller_recent_approved_orders_30d"] = (
-            np.searchsorted(approved, times, side="left")
-            - np.searchsorted(approved, start, side="left")
-        )
+        for days in SELLER_LOAD_WINDOWS_DAYS:
+            start = times - np.timedelta64(days, "D")
+            column = f"seller_recent_approved_orders_{days}d"
+
+            approved_before = np.searchsorted(
+                approved, times, side="left"
+            )
+            approved_from_start = np.searchsorted(
+                approved, start, side="left"
+            )
+            result.loc[indexes, column] = (
+                approved_before - approved_from_start
+            )
 
     return result
 
 
 def holiday_features(context: FeatureContext) -> pd.DataFrame:
-    """Indica si la aprobación ocurrió en un feriado nacional de Brasil.
+    """Feriados nacionales al aprobar y durante los siete días siguientes.
 
-    Solo usa prediction_time. No incorpora feriados estatales o municipales
-    porque esa información no está disponible de forma uniforme para todos
-    los pedidos.
+    is_national_holiday indica si la aprobación ocurrió en un feriado.
+    n_national_holidays_next_7d cuenta los feriados nacionales desde el día
+    posterior a la aprobación hasta los siguientes siete días inclusive.
+
+    El calendario se conoce de antemano, por lo que no representa fuga de
+    información. No incorpora feriados estatales, municipales ni Carnaval.
     """
     prediction_date = pd.to_datetime(
         context.base[PREDICTION_TIME_COL], errors="coerce"
     ).dt.normalize()
+    prediction_days = prediction_date.dt.date
+    years_in_data = prediction_date.dropna().dt.year
 
-    years = prediction_date.dropna().dt.year.unique().tolist()
-    holiday_dates = set(holidays.country_holidays("BR", years=years))
+    if years_in_data.empty:
+        holiday_dates = set()
+    else:
+        first_year = int(years_in_data.min())
+        last_year = int(years_in_data.max())
+        holiday_dates = set(
+            holidays.country_holidays(
+                "BR",
+                years=list(range(first_year, last_year + 2)),
+            )
+        )
+
+    future_holidays = [
+        sum(
+            day + timedelta(days=offset) in holiday_dates
+            for offset in range(1, HOLIDAY_LOOKAHEAD_DAYS + 1)
+        )
+        if pd.notna(day)
+        else 0
+        for day in prediction_days
+    ]
 
     return context.base[["order_id"]].assign(
-        is_national_holiday=prediction_date.dt.date.isin(holiday_dates).astype(int)
+        is_national_holiday=(
+            prediction_days.isin(holiday_dates).astype(int).to_numpy()
+        ),
+        n_national_holidays_next_7d=future_holidays,
     )
+
 
 FEATURE_BUILDERS: list[FeatureBuilder] = [
     FeatureBuilder(
@@ -283,7 +329,7 @@ FEATURE_BUILDERS: list[FeatureBuilder] = [
         categorical=("customer_region", "seller_region", "cross_region"),
     ),
     FeatureBuilder("producto", product_features, categorical=("main_category",)),
-        FeatureBuilder(
+    FeatureBuilder(
         "historial_vendedor",
         seller_history_features,
         numeric=("seller_prev_orders", "seller_prev_late_rate"),
@@ -291,12 +337,19 @@ FEATURE_BUILDERS: list[FeatureBuilder] = [
     FeatureBuilder(
         "carga_reciente_vendedor",
         seller_recent_load_features,
-        numeric=("seller_recent_approved_orders_30d",),
+        numeric=(
+            "seller_recent_approved_orders_7d",
+            "seller_recent_approved_orders_14d",
+            "seller_recent_approved_orders_30d",
+        ),
     ),
-        FeatureBuilder(
+    FeatureBuilder(
         "feriados",
         holiday_features,
-        numeric=("is_national_holiday",),
+        numeric=(
+            "is_national_holiday",
+            "n_national_holidays_next_7d",
+        ),
     ),
 ]
 
