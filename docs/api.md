@@ -33,7 +33,7 @@ curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -
     "n_items": 1, "n_sellers": 1,
     "total_price": 120.0, "total_freight": 18.0, "freight_ratio": 0.15,
     "total_weight_g": 800, "total_volume_cm3": 4000, "max_installments": 3,
-    "max_distance_km": 1850,
+    "max_distance_km": 1850, "n_national_holidays_next_7d": 0,
     "customer_state": "MA", "main_payment_type": "credit_card", "seller_other_state": "True"
   }]
 }'

@@ -43,9 +43,9 @@ Eso define las métricas: con clases tan desbalanceadas un modelo que dice "nunc
 | Modelo | Tramo 1 | Tramo 2 | Tramo 3 | Tramo 4 | Media | ROC-AUC media |
 |---|---|---|---|---|---|---|
 | Regresión logística, baseline (referencia) | 0,119 | 0,278 | 0,301 | 0,129 | 0,206 | 0,701 |
-| **Regresión logística, selección (elegido)** | 0,118 | 0,280 | 0,305 | 0,135 | **0,209** | 0,707 |
-| Árboles (HistGradientBoosting), selección | 0,113 | 0,272 | 0,320 | 0,144 | 0,212 | 0,708 |
-| Árboles, todas las features | 0,104 | 0,267 | 0,302 | 0,148 | 0,205 | 0,701 |
+| **Regresión logística, selección (elegido)** | 0,118 | 0,280 | 0,310 | 0,139 | **0,212** | 0,711 |
+| Árboles (HistGradientBoosting), selección | 0,111 | 0,274 | 0,326 | 0,148 | 0,215 | 0,710 |
+| Árboles, todas las features | 0,110 | 0,259 | 0,313 | 0,153 | 0,209 | 0,706 |
 
 Los árboles quedan a 0,003 de la logística, dentro de la tolerancia de 0,01, así que gana la logística por ser más simple. La diferencia entre tramos (de 0,12 a 0,31) es mayor que la diferencia entre modelos: es la deriva temporal, y por eso no damos por buena una mejora de menos de 0,01.
 
@@ -54,8 +54,8 @@ Los árboles quedan a 0,003 de la logística, dentro de la tolerancia de 0,01, a
 | Modelo | PR-AUC | ROC-AUC |
 |---|---|---|
 | Logística, baseline | 0,072 | 0,700 |
-| **Logística, selección** | **0,073** | **0,708** |
-| Árboles, selección | 0,051 | 0,581 |
+| **Logística, selección** | **0,073** | **0,707** |
+| Árboles, selección | 0,051 | 0,579 |
 | Árboles, todas las features | 0,046 | 0,557 |
 
 El PR-AUC de 0,073 es el doble del piso (0,035). Es un modelo de priorización, no un detector: ordena mejor que el azar, pero la mayoría de las alertas no terminan en retraso.
@@ -66,15 +66,15 @@ Modelo reentrenado con train + validación, con los cortes fijados en validació
 
 | Nivel | % de pedidos | Tasa de retraso | % de los retrasos que capta | Lift |
 |---|---|---|---|---|
-| Alto | 9,7 % | 7,6 % | 21,1 % | 2,18 |
-| Medio | 17,8 % | 5,6 % | 28,5 % | 1,60 |
-| Bajo | 72,5 % | 2,4 % | 50,4 % | 0,69 |
+| Alto | 11,2 % | 7,5 % | 24,1 % | 2,15 |
+| Medio | 22,0 % | 5,6 % | 35,2 % | 1,60 |
+| Bajo | 66,8 % | 2,1 % | 40,7 % | 0,61 |
 
-Leído para el negocio: revisando 1 de cada 10 pedidos se llega a 1 de cada 5 retrasos, y en ese grupo los retrasos son 2,2 veces más frecuentes que en el total. Con alto y medio juntos (27,5 % de los pedidos) se capta la mitad de los retrasos.
+Leído para el negocio: revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos, y en ese grupo los retrasos son 2,1 veces más frecuentes que en el total. Con alto y medio juntos (33,2 % de los pedidos) se capta el 59 % de los retrasos.
 
 ### Calibración
 
-En validación la probabilidad calibrada promedia 6,8 %, igual a la tasa real. En test promedia 8,3 % contra 3,5 % real, porque la tasa de retraso cayó a la mitad en esos meses y el calibrador se ajustó con el modelo de train. Por eso en la app y en la demo mostramos el **nivel** de riesgo y no la probabilidad como dato principal: el orden se sostiene, el valor absoluto no.
+En validación la probabilidad calibrada promedia 6,8 %, igual a la tasa real. En test promedia 9,3 % contra 3,5 % real, porque la tasa de retraso cayó a la mitad en esos meses y el calibrador se ajustó con el modelo de train. Por eso en la app y en la demo mostramos el **nivel** de riesgo y no la probabilidad como dato principal: el orden se sostiene, el valor absoluto no.
 
 ### Sensibilidad al costo de los errores
 
@@ -82,18 +82,18 @@ Si un retraso no detectado cuesta r veces una falsa alerta, el umbral óptimo co
 
 | r | Umbral | % de pedidos en alerta | Recall | Precision |
 |---|---|---|---|---|
-| 5 | 0,167 | 12,5 % | 26,6 % | 7,4 % |
-| 10 | 0,091 | 29,4 % | 53,0 % | 6,3 % |
-| 20 | 0,048 | 57,1 % | 88,1 % | 5,4 % |
+| 5 | 0,167 | 14,6 % | 29,7 % | 7,1 % |
+| 10 | 0,091 | 35,0 % | 62,9 % | 6,3 % |
+| 20 | 0,048 | 64,3 % | 90,9 % | 4,9 % |
 
 Lo dejamos como análisis, no como regla: con la calibración inflada en los meses nuevos estos umbrales alertan más de lo previsto, y los niveles por volumen son más estables.
 
 ## Por qué la regresión logística
 
-1. **Empata con el mejor en validación cruzada** (0,209 contra 0,212) y la regla de empate, fijada antes de mirar el test, ya la elegía.
+1. **Empata con el mejor en validación cruzada** (0,212 contra 0,215) y la regla de empate, fijada antes de mirar el test, ya la elegía.
 2. **Aguanta la deriva.** Olist acortó los plazos prometidos (mediana de 25 días en train, 21 en test). Los árboles aprenden cortes fijos sobre el plazo y en test caen a ROC-AUC 0,58; la logística usa una relación lineal y se mantiene en 0,71.
 3. **Es explicable.** Cada coeficiente dice hacia dónde mueve el riesgo una variable, algo que se puede mostrar en la app y defender en la demo.
-4. **Variables:** las del baseline sin el mes de compra (empeora la validación porque aprende meses que no se repiten) más la distancia cliente-vendedor, que mejora la validación cruzada.
+4. **Variables:** las del baseline sin el mes de compra (empeora la validación porque aprende meses que no se repiten) más la distancia cliente-vendedor y los feriados de los 7 días siguientes, que mejoran la validación cruzada.
 
 ## Límites
 

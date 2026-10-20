@@ -63,7 +63,7 @@ CV_FOLDS = 4
 # Candidatos a modelo principal, del más simple al más complejo. El baseline queda como referencia.
 MAIN_CANDIDATES = ("logistica_seleccion", "arboles_seleccion", "arboles_completa")
 DROPPED_FEATURES = ["purchase_month"]
-SELECTED_EXTRA_FEATURES = ["max_distance_km"]
+SELECTED_EXTRA_FEATURES = ["max_distance_km", "n_national_holidays_next_7d"]
 MODELS_DIR = Path("models")
 
 
@@ -120,7 +120,7 @@ def make_hist_gradient_boosting(numeric: list[str], categorical: list[str]) -> P
 
 
 def selected_feature_lists(anchor: str = DEFAULT_ANCHOR) -> tuple[list[str], list[str]]:
-    """(numéricas, categóricas) de la selección: baseline sin el mes, más la distancia."""
+    """(numéricas, categóricas) de la selección: baseline sin el mes, más distancia y feriados próximos."""
     numeric_all, _ = model_feature_lists(anchor)
     numeric = [c for c in numeric_features(anchor) if c not in DROPPED_FEATURES]
     numeric += [c for c in SELECTED_EXTRA_FEATURES if c in numeric_all]
