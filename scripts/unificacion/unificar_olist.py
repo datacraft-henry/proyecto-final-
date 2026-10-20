@@ -7,6 +7,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from src.unificacion import agregar_target
+from src.target import TARGET_COL
+
 SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("olist_limpio")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -95,13 +99,10 @@ d["dias_a_transportista"] = (d.order_delivered_carrier_date - d.order_purchase_t
 d["dias_entrega_total"] = (d.order_delivered_customer_date - d.order_purchase_timestamp).dt.total_seconds() / 86400
 d["dias_entrega_estimada"] = (d.order_estimated_delivery_date - d.order_purchase_timestamp).dt.total_seconds() / 86400
 d["dias_retraso"] = (d.order_delivered_customer_date - d.order_estimated_delivery_date).dt.total_seconds() / 86400
-# Target alineado con docs/decisiones.md (punto 2): se compara por DIA CALENDARIO,
-# no por timestamp, porque la fecha estimada viene siempre a las 00:00.
-# Solo se etiqueta si el pedido esta "delivered" y tiene ambas fechas; el resto queda NaN.
-dia_real = d.order_delivered_customer_date.dt.normalize()
-dia_estimado = d.order_estimated_delivery_date.dt.normalize()
-etiquetable = (d.order_status == "delivered") & dia_real.notna() & dia_estimado.notna()
-d["entrega_tardia"] = np.where(etiquetable, (dia_real > dia_estimado).astype(float), np.nan)
+
+d = agregar_target(d, orders)  
+fo = d  # merge devuelve una tabla nueva: se re-apunta fo para que se exporte con el target
+
 d["fecha_compra"] = d.order_purchase_timestamp.dt.normalize()
 d["tiene_items"] = d.n_items.notna()
 d["tiene_review"] = d.review_score.notna()
@@ -130,7 +131,7 @@ flat = (fi.merge(dim_prod, on="product_id", how="left")
           .merge(dim_sell.rename(columns={"zip_prefix": "seller_zip_prefix"}), on="seller_id", how="left")
           .merge(fo[["order_id", "customer_zip_code_prefix", "customer_city", "customer_state",
                      "review_score", "tiene_review", "dias_entrega_total", "dias_retraso",
-                     "entrega_tardia", "n_items", "n_vendedores"]], on="order_id", how="left"))
+                     TARGET_COL, "n_items", "n_vendedores"]], on="order_id", how="left"))
 # Columnas de pago NO se llevan a la tabla de ítems (se inflarían al repetirse por ítem).
 
 # ---------------------------------------------------------------- validaciones
