@@ -119,7 +119,6 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 - **Estado:** Acordada (con la aprobación del PR por Agustina).
 - **Decisión:** el modelo estrella y la tabla plana para Power BI y EDA se generan con `scripts/unificacion/unificar_olist.py`. `scripts/` es para scripts reproducibles que no son lógica del modelo; `src/` queda para código con tests. Los CSV de salida no se suben (punto 7).
 - **Por qué:** el dashboard necesita relaciones entre tablas sin duplicar filas ni importes, y el script lo valida. Cada integrante regenera las tablas desde los CSV de Kaggle.
-- **Alineación con el target:** `entrega_tardia` usa la regla del punto 2 (día calendario, solo `delivered` con ambas fechas): 96.470 pedidos etiquetados y tasa de retraso 0,0677.
+- **Alineación con el target (2026-10-20):** el script ya no calcula el target por su cuenta. `src/unificacion.py` (`agregar_target`) llama a `build_target` de `src/target.py` y une el resultado a `fact_orders` con un left join por `order_id`. Se conservan los 99.441 pedidos; 96.203 quedan etiquetados (tasa 6,79 %, igual que el modelo) y 3.238 en vacío (no entregados, sin fecha o fuera del período del punto 8). La columna pasa de `entrega_tardia` a `pedido_retrasado` (acordado con Agustina). Tests en `tests/test_unificacion.py`.
 - **Límite:** `fact_orders` incluye datos posteriores a la aprobación (fechas de entrega, reseñas). Por el punto 4 no es entrada del modelo, que usa la tabla de `src/features.py`.
 - **Implementación:** `python scripts/unificacion/unificar_olist.py data/raw data/processed/olist_limpio`. Detalle en `scripts/unificacion/README.md`.
-- **Pendiente:** reutilizar `src/target.py` para tener una sola definición del target y agregar tests.

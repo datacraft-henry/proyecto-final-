@@ -71,7 +71,7 @@ Relaciones para Power BI: `fact_orders.order_id` ↔ `fact_order_items.order_id`
 - Se calcula `product_volume_cm3` (largo × alto × ancho).
 
 **Lo que NO se filtra:**
-- `fact_orders` conserva **todos los pedidos**, entregados o no. Para analizar entregas hay que filtrar por `entrega_tardia` no nula.
+- `fact_orders` conserva **todos los pedidos**, entregados o no. Para analizar entregas hay que filtrar por `pedido_retrasado` no nula.
 
 ## Columnas calculadas en `fact_orders`
 
@@ -82,21 +82,19 @@ Relaciones para Power BI: `fact_orders.order_id` ↔ `fact_order_items.order_id`
 | `dias_entrega_total` | Compra → entrega al cliente |
 | `dias_entrega_estimada` | Compra → fecha estimada |
 | `dias_retraso` | Entrega real − fecha estimada, en días con decimales. Negativo si llegó antes. Es continua, útil para ver la distribución |
-| `entrega_tardia` | **Target.** Ver abajo |
+| `pedido_retrasado` | **Target.** Ver abajo |
 | `fecha_compra` | Fecha de compra sin hora (clave hacia `dim_calendario`) |
 | `tiene_items`, `tiene_review` | Indicadores booleanos |
 
-### Definición de `entrega_tardia`
+### Definición de `pedido_retrasado`
 
-Igual que `docs/decisiones.md` (punto 2):
+No se calcula en el script: se toma de `build_target` (`src/target.py`) a través de `agregar_target` (`src/unificacion.py`), así hay una sola definición en todo el proyecto (`docs/decisiones.md`, puntos 2 y 8).
 
 - `1.0` si el **día** de entrega real es posterior al **día** estimado.
 - `0.0` si llegó el día estimado o antes.
-- **Vacío (NaN)** si el pedido no está en estado `delivered` o le falta alguna de las dos fechas. Estos pedidos no se etiquetan como puntuales.
+- **Vacío (NaN)** si el pedido no está `delivered`, le falta alguna fecha o se compró fuera del período de estudio (enero 2017 a agosto 2018). Estos pedidos no se etiquetan como puntuales.
 
-La comparación es por día calendario porque la fecha estimada viene siempre a las 00:00. Comparar timestamps marca como tarde a un pedido entregado el día prometido por la tarde, y da 8,11 % en lugar de 6,77 %.
-
-**Verificación esperada:** `fact_orders["entrega_tardia"].mean()` debería dar cerca de **0,0677** (los NaN se excluyen del promedio). Si da otro valor, algo no coincide con la definición del equipo.
+**Verificación esperada:** `fact_orders["pedido_retrasado"].mean()` debería dar **0,0679** (los NaN se excluyen del promedio), con 96.203 pedidos no nulos.
 
 ## Validaciones automáticas
 
