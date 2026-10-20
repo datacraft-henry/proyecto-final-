@@ -100,7 +100,7 @@ d["dias_entrega_total"] = (d.order_delivered_customer_date - d.order_purchase_ti
 d["dias_entrega_estimada"] = (d.order_estimated_delivery_date - d.order_purchase_timestamp).dt.total_seconds() / 86400
 d["dias_retraso"] = (d.order_delivered_customer_date - d.order_estimated_delivery_date).dt.total_seconds() / 86400
 
-d = agregar_target(d, orders)  # merge devuelve una tabla nueva: se re-apunta d para que se exporte con el target
+d = agregar_target(d, orders)  
 fo = d  # merge devuelve una tabla nueva: se re-apunta fo para que se exporte con el target
 
 d["fecha_compra"] = d.order_purchase_timestamp.dt.normalize()
