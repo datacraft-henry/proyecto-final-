@@ -8,7 +8,6 @@ from app.vista import (
     TABLE_MAX_HEIGHT,
     filter_orders,
     format_factor,
-    headline,
     impact_weights,
     late_summary,
     lift_high,
@@ -17,7 +16,6 @@ from app.vista import (
     plural,
     table_height,
     table_view,
-    times_word,
 )
 from src.features import PREDICTION_TIME_COL
 from src.target import TARGET_COL
@@ -116,34 +114,6 @@ def test_impact_weights_are_relative_to_the_biggest_factor_shown():
     assert tiny["peso"].min() == pytest.approx(MIN_BAR_SHARE)  # siempre se ve algo de barra
 
 
-def _high_summary(pct_pedidos: float, pct_retrasos: float) -> pd.DataFrame:
-    return pd.DataFrame(
-        {"pct_pedidos": [pct_pedidos, 0.2, 0.8 - pct_pedidos], "pct_retrasos": [pct_retrasos, 0.3, 0.7 - pct_retrasos]},
-        index=["alto", "medio", "bajo"],
-    )
-
-
-def test_headline_speaks_in_one_out_of_n():
-    main, detail = headline(_high_summary(0.097, 0.211))
-    assert "1 de cada 10" in main and "1 de cada 5" in main
-    assert "el doble" in main
-    assert "9,7 %" in detail and "21,1 %" in detail
-
-
-def test_headline_skips_the_comparison_when_red_orders_are_not_better_than_random():
-    main, _ = headline(_high_summary(0.10, 0.10))
-    assert "azar" not in main
-    main, _ = headline(_high_summary(0.013, 0.183))
-    assert "veces lo que" in main
-
-
-def test_headline_needs_late_orders():
-    assert headline(_high_summary(0.10, 0.0)) is None
-    assert headline(pd.DataFrame({"pct_pedidos": [0.1, 0.2, 0.7]}, index=["alto", "medio", "bajo"])) is None
-
-
-def test_one_in_and_times_word():
+def test_one_in():
     assert one_in(0.097) == "1 de cada 10"
     assert one_in(0.8) == "todos"
-    assert times_word(2.18) == "el doble"
-    assert times_word(1.6) == "1,6 veces"

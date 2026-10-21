@@ -40,11 +40,16 @@ ABLATION_EXTRAS: dict[str, tuple[str, ...]] = {
 def ablation_feature_lists(
     anchor: str = DEFAULT_ANCHOR,
 ) -> dict[str, tuple[list[str], list[str]]]:
-    """Devuelve las columnas del modelo actual mas una variable por vez."""
-    selected_numeric, categorical = selected_feature_lists(anchor)
+    """Devuelve las columnas del modelo sin las variables evaluadas, más una por vez.
+
+    La referencia saca las variables del Sprint 2 aunque alguna ya esté en el
+    modelo productivo, para que la comparación siga siendo la misma.
+    """
+    requested = set().union(*ABLATION_EXTRAS.values())
+    model_numeric, categorical = selected_feature_lists(anchor)
+    selected_numeric = [f for f in model_numeric if f not in requested]
     available_numeric, _ = model_feature_lists(anchor)
 
-    requested = set().union(*ABLATION_EXTRAS.values())
     missing = requested - set(available_numeric)
     if missing:
         raise ValueError(

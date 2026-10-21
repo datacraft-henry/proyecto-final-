@@ -53,6 +53,9 @@ class Pedido(BaseModel):
     total_volume_cm3: float | None = Field(None, ge=0)
     max_installments: int | None = Field(None, ge=0, description="Máximo de cuotas del pago")
     max_distance_km: float | None = Field(None, ge=0, description="Distancia máxima cliente-vendedor en km")
+    n_national_holidays_next_7d: int | None = Field(
+        None, ge=0, le=7, description="Feriados nacionales de Brasil en los 7 días desde la aprobación"
+    )
     customer_state: str | None = Field(None, min_length=2, max_length=2, description="Estado del cliente, por ejemplo SP")
     main_payment_type: str | None = Field(None, description="credit_card, boleto, voucher o debit_card")
     seller_other_state: Literal["True", "False", "unknown"] | None = Field(

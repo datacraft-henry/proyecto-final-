@@ -93,24 +93,24 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 | Medio | 15,4 % | 5,0 % | 22,0 % | 1,43 |
 | Bajo | 78,4 % | 2,8 % | 62,6 % | 0,80 |
 
-- **Aplicado al modelo principal (decisión 10), en test:** riesgo medio calibrado 8,3 % frente a 3,5 % real (en validación 6,8 % = tasa real). Es el modelo final: reentrenado con train + validación, con el calibrador y los cortes fijados en validación (actualización 2026-10-08).
+- **Aplicado al modelo principal (decisión 10), en test:** riesgo medio calibrado 9,3 % frente a 3,5 % real (en validación 6,8 % = tasa real). Es el modelo final: reentrenado con train + validación, con el calibrador y los cortes fijados en validación (actualización 2026-10-08; reentrenado el 2026-10-20 con los feriados próximos).
 
 | Nivel | % de pedidos | Tasa de retraso | % de los retrasos | Lift |
 |---|---|---|---|---|
-| Alto | 9,7 % | 7,6 % | 21,1 % | 2,18 |
-| Medio | 17,8 % | 5,6 % | 28,5 % | 1,60 |
-| Bajo | 72,5 % | 2,4 % | 50,4 % | 0,69 |
+| Alto | 11,2 % | 7,5 % | 24,1 % | 2,15 |
+| Medio | 22,0 % | 5,6 % | 35,2 % | 1,60 |
+| Bajo | 66,8 % | 2,1 % | 40,7 % | 0,61 |
 
-  En test el nivel alto cubre 9,7 % de pedidos y no 5 %: con los cortes fijos de validación, el modelo principal sube los puntajes de los meses nuevos. El volumen de alertas se mueve menos que con un umbral fijo, pero hay que vigilarlo en producción.
+  En test el nivel alto cubre 11,2 % de pedidos y no 5 %: con los cortes fijos de validación, el modelo principal sube los puntajes de los meses nuevos. El volumen de alertas se mueve menos que con un umbral fijo, pero hay que vigilarlo en producción.
 - **Por qué:** con la prevalencia mensual entre 1,2 % y 19 % (EDA), un umbral fijo dispara cantidades muy distintas de alertas según el mes. Logística necesita saber cuántos pedidos va a revisar.
 - **Implementación:** `src/calibration.py` y `src/umbral.py` `python -m src.umbral` aplica la calibración al modelo principal, escribe `reports/umbral_calibracion_principal.json` y guarda el artefacto calibrado (modelo, features, calibrador y cortes) en `models/modelo_principal_calibrado.joblib`, que es el que servirá la API. `python -m src.umbral --modelo baseline` reproduce la tabla del baseline. `predict_risk(artefacto, pedidos)` devuelve `prob_retraso` y `nivel_riesgo`. Pruebas en `tests/test_calibration.py`.
 
 ## 10. Modelo principal: regresión logística con selección de features
 
 - **Estado:** Propuesta (parte 2). Se ratifica en el daily.
-- **Decisión:** el modelo principal es una regresión logística balanceada con las variables del baseline sin `purchase_month`, más la distancia cliente-vendedor (`max_distance_km`). Se elige con validación cruzada temporal de 4 tramos sobre train + validación, por PR-AUC medio, y ante un empate (menos de 0,01) gana el modelo más simple.
-- **Resultado en test:** ROC-AUC 0,708 y PR-AUC 0,073, contra 0,700 y 0,072 del baseline (con las distancias recortadas a Brasil; antes del recorte, 0,709 y 0,076).
-- **Modelo final (2026-10-08):** se reentrena con train + validación en `src/umbral.py` y se guarda calibrado para la API. En test ordena igual que el de train (ROC-AUC 0,708). Detalle en `docs/decisiones_modelos.md`.
+- **Decisión:** el modelo principal es una regresión logística balanceada con las variables del baseline sin `purchase_month`, más la distancia cliente-vendedor (`max_distance_km`) y, desde el Sprint 2, los feriados nacionales de los 7 días siguientes a la aprobación (`n_national_holidays_next_7d`). Se elige con validación cruzada temporal de 4 tramos sobre train + validación, por PR-AUC medio, y ante un empate (menos de 0,01) gana el modelo más simple.
+- **Resultado en test:** ROC-AUC 0,707 y PR-AUC 0,073, contra 0,700 y 0,072 del baseline. Los feriados suben el PR-AUC de la validación cruzada de 0,209 a 0,212 y no cambian el test.
+- **Modelo final (2026-10-08):** se reentrena con train + validación en `src/umbral.py` y se guarda calibrado para la API. En test ordena igual que el de train (ROC-AUC 0,707). Detalle en `docs/decisiones_modelos.md`.
 - **Por qué no árboles:** empatan en la validación cruzada pero en test caen a ROC-AUC 0,58, porque Olist acortó los plazos prometidos y los árboles no extrapolan ese cambio.
 - **Implementación:** `src/feature_engineering.py` (features de ruta, producto e historial del vendedor, extensible con `FEATURE_BUILDERS`) y `src/training.py` (`python -m src.training`). Detalle y tabla completa en `docs/decisiones_modelos.md`.
 

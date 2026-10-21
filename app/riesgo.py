@@ -46,6 +46,7 @@ FEATURE_LABELS = {
     "max_installments": "Cuotas",
     "approval_hours": "Demora en aprobar el pago",
     "max_distance_km": "Distancia al vendedor",
+    "n_national_holidays_next_7d": "Feriados en la semana siguiente",
     "customer_state": "Estado del cliente",
     "main_payment_type": "Medio de pago",
     "seller_other_state": "Vendedor en otro estado",
@@ -63,6 +64,13 @@ def _number(value: float, decimals: int = 0) -> str:
     """Número con punto de miles y coma decimal."""
     text = f"{value:,.{decimals}f}"
     return text.replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+def _holidays(value: float) -> str:
+    count = int(value)
+    if count == 0:
+        return "ninguno"
+    return f"{count} feriado" if count == 1 else f"{count} feriados"
 
 
 def format_feature_value(feature: str, value) -> str:
@@ -83,6 +91,7 @@ def format_feature_value(feature: str, value) -> str:
         "max_installments": lambda v: _number(v),
         "approval_hours": lambda v: f"{_number(v, 1)} h",
         "max_distance_km": lambda v: f"{_number(v)} km",
+        "n_national_holidays_next_7d": _holidays,
         "main_payment_type": lambda v: _PAYMENT_TYPES.get(str(v), str(v)),
         "seller_other_state": lambda v: "sí" if str(v).lower() in ("1", "true", "sí", "si") else "no",
     }

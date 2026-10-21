@@ -65,6 +65,7 @@ def _pedido(**overrides) -> dict:
         "total_volume_cm3": 4000.0,
         "max_installments": 3,
         "max_distance_km": 430.0,
+        "n_national_holidays_next_7d": 0,
         "customer_state": "SP",
         "main_payment_type": "credit_card",
         "seller_other_state": "True",

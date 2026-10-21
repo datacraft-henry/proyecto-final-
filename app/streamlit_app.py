@@ -41,7 +41,6 @@ from app.vista import (  # noqa: E402
     format_factor,
     format_int,
     format_pct,
-    headline,
     impact_weights,
     late_summary,
     lift_high,
@@ -58,9 +57,9 @@ from src.features import PREDICTION_TIME_COL  # noqa: E402
 from src.validation import temporal_three_way_split  # noqa: E402
 
 LEVEL_INFO = {
-    "alto": ("Riesgo alto", "Revisar hoy: contactar al vendedor y avisar al cliente."),
-    "medio": ("Riesgo medio", "Seguir de cerca durante el envío."),
-    "bajo": ("Riesgo bajo", "Seguimiento normal."),
+    "alto": ("Riesgo alto", "Revisar hoy."),
+    "medio": ("Riesgo medio", "Seguir de cerca."),
+    "bajo": ("Riesgo bajo", "Sin acción."),
 }
 FACTORS_UP, FACTORS_DOWN = 3, 2
 ARROWS = {"up": "↑", "down": "↓"}
@@ -175,7 +174,7 @@ def show_toolbar(scored: pd.DataFrame) -> tuple[pd.DataFrame, str, bool, tuple]:
     full_period = (dates.min(), dates.max())
     with st.container(key="dc-toolbar"):
         st.markdown('<div class="dc-toolbar-title">Filtros</div>', unsafe_allow_html=True)
-        left, middle, right = st.columns([2, 2, 1.4], vertical_alignment="bottom")
+        left, middle, right = st.columns([1.7, 2.7, 1.2], vertical_alignment="bottom")
         period = left.date_input(
             "Pedidos aprobados entre",
             _seed().get("period", full_period),
@@ -184,16 +183,19 @@ def show_toolbar(scored: pd.DataFrame) -> tuple[pd.DataFrame, str, bool, tuple]:
             format="DD/MM/YYYY",
             key=_widget_key("period"),
         )
-        search_col, clear_col = middle.columns([3.3, 1.7], vertical_alignment="bottom")
+        search_col, find_col, clear_col = middle.columns([2.8, 0.9, 1.1], vertical_alignment="bottom")
         search = search_col.text_input(
             "Buscar un pedido",
             _seed().get("search", ""),
-            placeholder="Pegá el código del pedido",
+            placeholder="Pegá el id y apretá Enter",
             key=_widget_key("search"),
         )
+        # El text_input ya busca al apretar Enter; el botón solo vuelve a correr la
+        # pantalla, para quien espera un botón al lado del campo.
+        find_col.button("Buscar", key="find_order", type="primary", help="O apretá Enter en el campo")
         if search.strip():
             clear_col.button(
-                "✕ Limpiar búsqueda",
+                "✕ Limpiar",
                 key="clear_search",
                 type="tertiary",
                 help="Borra el código y deja el período y el nivel como están",
@@ -210,27 +212,24 @@ def show_toolbar(scored: pd.DataFrame) -> tuple[pd.DataFrame, str, bool, tuple]:
 
 
 def show_hero(summary: pd.DataFrame, n_orders: int) -> None:
-    sentences = headline(summary) if n_orders else None
-    if sentences:
-        text, detail = sentences
-    else:
-        high = summary.loc["alto"]
-        text, detail = f"Hay <b>{format_int(high['pedidos'])}</b> pedidos en riesgo alto para revisar.", ""
-    st.markdown(f'<p class="dc-hero">{text}</p>', unsafe_allow_html=True)
+    """Una sola frase: cuántos pedidos hay que revisar. El detalle va en las tarjetas y el gráfico."""
+    high = summary.loc["alto"]
     st.markdown(
-        f'<p class="dc-muted">{detail} {format_int(n_orders)} pedidos en el período elegido.</p>',
+        f'<p class="dc-hero">Hay <b>{format_int(high["pedidos"])}</b> pedidos en riesgo alto para revisar.</p>',
         unsafe_allow_html=True,
     )
+    st.markdown(f'<p class="dc-muted">{format_int(n_orders)} pedidos en el período elegido.</p>', unsafe_allow_html=True)
 
 
-def show_level_cards(summary: pd.DataFrame) -> None:
+def show_level_cards(summary: pd.DataFrame, show_real: bool) -> None:
+    """Una tarjeta por nivel: cuántos son, qué parte del total y qué hacer. El dato real solo si se pidió."""
     colors = palette()["level"]
     for column, level in zip(st.columns(len(LEVELS)), LEVELS):
         row = summary.loc[level]
         title, action = LEVEL_INFO[level]
         late = (
             f" · se retrasó el {format_pct(row['tasa_retraso_real'])}"
-            if "tasa_retraso_real" in summary.columns and row["pedidos"]
+            if show_real and "tasa_retraso_real" in summary.columns and row["pedidos"]
             else ""
         )
         column.markdown(
@@ -576,7 +575,7 @@ def main() -> None:
     in_period, search, show_real, full_period = show_toolbar(scored)
     summary = summary_by_level(in_period)
     show_hero(summary, len(in_period))
-    show_level_cards(summary)
+    show_level_cards(summary, show_real)
     st.write("")
     show_share_chart(summary)
 

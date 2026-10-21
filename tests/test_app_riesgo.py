@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from app.riesgo import (
+    FEATURE_LABELS,
     SEMAFORO,
     format_feature_value,
     load_artifact,
@@ -13,7 +14,7 @@ from app.riesgo import (
 from src.calibration import PlattCalibrator
 from src.features import PREDICTION_TIME_COL
 from src.target import TARGET_COL
-from src.training import make_logistic
+from src.training import make_logistic, selected_feature_lists
 
 
 class _ScoreIsColumn:
@@ -89,6 +90,14 @@ def test_feature_values_are_written_for_operations():
     assert format_feature_value("purchase_dayofweek", 0) == "lunes"
     assert format_feature_value("seller_other_state", True) == "sí"
     assert format_feature_value("promised_days", float("nan")) == "sin dato"
+    assert format_feature_value("n_national_holidays_next_7d", 0.0) == "ninguno"
+    assert format_feature_value("n_national_holidays_next_7d", 1.0) == "1 feriado"
+    assert format_feature_value("n_national_holidays_next_7d", 2) == "2 feriados"
+
+
+def test_every_model_feature_has_an_operations_label():
+    numeric, categorical = selected_feature_lists()
+    assert set(numeric + categorical) <= set(FEATURE_LABELS)
 
 
 def test_risk_factors_point_to_what_moves_the_order_away_from_average():
