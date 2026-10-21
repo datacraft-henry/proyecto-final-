@@ -96,40 +96,6 @@ def one_in(share: float) -> str:
     return "todos" if n <= 1 else f"1 de cada {n}"
 
 
-def times_word(lift: float) -> str:
-    """Un multiplicador dicho en palabras: 2,18 -> 'el doble', 1,6 -> '1,6 veces'."""
-    words = {2: "el doble", 3: "el triple", 4: "el cuádruple"}
-    nearest = round(lift)
-    if nearest in words and abs(lift - nearest) < 0.25:
-        return words[nearest]
-    return f"{lift:.1f} veces".replace(".", ",")
-
-
-def headline(summary: pd.DataFrame) -> tuple[str, str] | None:
-    """La frase principal para alguien que no conoce el modelo, y el detalle exacto.
-
-    Se arma con los números del período: qué parte de los pedidos es roja y qué parte
-    de los retrasos encuentra quien revisa solo esos. None si no hay dato de retrasos.
-    """
-    lift = lift_high(summary)
-    if lift is None or not summary.loc["alto", "pct_retrasos"]:
-        return None
-    high = summary.loc["alto"]
-    main = (
-        f"Si revisás solo los pedidos en rojo (<b>{one_in(high['pct_pedidos'])}</b>), "
-        f"ya encontrás <b>{one_in(high['pct_retrasos'])}</b> de todos los pedidos que se retrasaron."
-    )
-    if lift >= 1.15:
-        word = times_word(lift)
-        connector = "de lo que" if word.startswith("el ") else "lo que"
-        main += f" Es {word} {connector} encontrarías eligiendo la misma cantidad de pedidos al azar."
-    detail = (
-        f"En números: los pedidos en rojo son el {format_pct(high['pct_pedidos'])} del total "
-        f"y entre ellos está el {format_pct(high['pct_retrasos'])} de todos los retrasos."
-    )
-    return main, detail
-
-
 def impact_weights(factors: pd.DataFrame, n_up: int, n_down: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Los factores que más suben y más bajan el riesgo, con un peso de 0 a 1 para la barra.
 
