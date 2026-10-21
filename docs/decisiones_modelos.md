@@ -66,6 +66,7 @@ Tres cosas a tener en cuenta al contarlo:
 
 - **La mejora es chica:** +0,002, menor que la tolerancia de 0,01 que usamos para elegir modelo.
 - **El signo es al revés de lo esperado:** el coeficiente es negativo (-0,15 en la escala estandarizada), o sea que un feriado próximo baja el riesgo estimado, a igual plazo prometido. Una explicación posible es que Olist alarga el plazo prometido cerca de los feriados, pero no lo verificamos.
+- **Por qué la sumamos igual, con la regla de 0,01 en contra:** esa regla la usamos para elegir entre modelos, donde el más simple ahorra complejidad real. Acá la alternativa es una columna más en una logística, que no cambia el modelo ni su lectura, y la mejora se repite en los 4 tramos. Es una decisión débil y la tratamos así: si el monitoreo del nivel alto o una recalibración con datos nuevos muestran que no suma, se saca cambiando una línea de `SELECTED_EXTRA_FEATURES`.
 - **En test la variable no aporta:** entre junio y agosto de 2018 no hay feriados nacionales, así que vale 0 en todos los pedidos de test (en train el 12 % de los pedidos tiene un feriado próximo; en validación, el 33 %). Por eso el PR-AUC de test no cambia (0,073). Lo único que cambia en test es que todos los puntajes suben un poco, y el nivel alto pasa de 9,7 % a 11,2 % de los pedidos.
 
 ## Por qué no elegimos los árboles
@@ -106,5 +107,6 @@ Reentrenar no mejora la discriminación en test: los dos modelos ordenan los ped
 ## Pendiente
 
 - **Mathias:** ideas del EDA que todavía no están: tiempo histórico de la ruta estado-estado y fin de mes. Carga del vendedor y feriados ya se evaluaron (ver "Sprint 2").
-- **Recalibrar con datos más nuevos** cuando haya pedidos posteriores a agosto 2018: hoy el calibrador y los cortes salen de mar-may 2018, y en los meses nuevos el nivel alto marca casi el doble del 5 % previsto.
+- **Recalibrar con datos más nuevos** cuando haya pedidos posteriores a agosto 2018: hoy el calibrador y los cortes salen de mar-may 2018, y en los meses nuevos el nivel alto marca más del doble del 5 % previsto (11,2 % en test). La respuesta para la demo: los cortes se fijan por volumen en validación y se recalibran cada vez que entra un período nuevo de datos; mientras tanto, el volumen de alertas se vigila (monitoreo del nivel alto) y no se promete un 5 % fijo.
+- **Después de fusionar un cambio del modelo** (features, calibración o cortes) hay que correr `python -m src.training` y `python -m src.umbral` en la máquina que sirve la API y la app: los `.joblib` no se versionan, y un artefacto viejo no conoce las columnas nuevas.
 - `models/modelo_principal.joblib`, que guarda `src/training.py`, es solo para comparar modelos. El que usa la API es `models/modelo_principal_calibrado.joblib`.
