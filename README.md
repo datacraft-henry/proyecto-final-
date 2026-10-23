@@ -245,8 +245,9 @@ El detalle y las decisiones del equipo están en [`docs/decisiones.md`](docs/dec
 - [x] Entrenar y evaluar modelos (`src/training.py`, ver `docs/decisiones_modelos.md`).
 - [x] Calibrar el modelo principal y definir niveles de riesgo (`src/umbral.py`).
 - [x] Construir la demo en Streamlit y la API
-- [ ] Sumar las features del EDA de Mathias (ruta, carga del vendedor, feriados).
-- [ ] Usar el target único en el script de unificación.
+- [x] Sumar las features del EDA de Mathias (`src/feature_ablation.py`, ver `docs/decisiones_modelos.md`, "Sprint 2").
+- [x] Usar el target único en el script de unificación (`src/unificacion.py`).
+- [x] Empaquetar la API en Docker (`Dockerfile`, ver `docs/api.md`).
 - [ ] Construir el tablero de Power BI.
 - [ ] Monitorear el volumen del nivel de riesgo alto.
 - [ ] Escribir el informe final y preparar la defensa.

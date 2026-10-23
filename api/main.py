@@ -20,6 +20,7 @@ from typing import Literal
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.umbral import CALIBRATED_MODEL_PATH, predict_risk
@@ -105,6 +106,12 @@ def _artifact(request: Request) -> dict:
             detail=f"No hay modelo cargado. Generalo con `python -m src.umbral` (busca {model_path()}).",
         )
     return artifact
+
+
+@app.get("/", include_in_schema=False)
+def inicio() -> RedirectResponse:
+    """La raíz lleva a la documentación interactiva, para que nadie vea un 404 al abrir la API."""
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")

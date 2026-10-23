@@ -56,3 +56,17 @@ Respuesta (números ilustrativos, dependen del artefacto entrenado):
 ## Tests
 
 `tests/test_api.py`, con un artefacto sintético que no depende de `models/`: el esquema cubre todas las variables del modelo, las columnas con fuga se rechazan, `/predict` da lo mismo que `predict_risk`, los faltantes se imputan, los valores imposibles se rechazan y sin modelo devuelve 503.
+
+## Docker
+
+El modelo no va dentro de la imagen (los `.joblib` no se versionan): se genera en tu máquina y se monta al correr el contenedor.
+
+```bash
+python -m src.umbral                                   # genera models/modelo_principal_calibrado.joblib
+docker build -t datacraft-api .
+docker run -p 8000:8000 -v "$(pwd)/models:/app/models" datacraft-api
+```
+
+En Windows PowerShell: `-v "${PWD}/models:/app/models"`. Para probarla: http://localhost:8000/health y http://localhost:8000/docs.
+
+**Ojo con la versión de scikit-learn:** el modelo solo carga bien con la misma versión con la que se entrenó. Si `python -c "import sklearn; print(sklearn.__version__)"` da una versión distinta a la del contenedor, fijarla en el `Dockerfile` (por ejemplo `"scikit-learn==1.5.2"`).

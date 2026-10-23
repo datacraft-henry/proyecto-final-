@@ -120,3 +120,8 @@ def test_health_reports_model(client):
     assert body["status"] == "ok"
     assert body["features"] == NUMERIC + CATEGORICAL
     assert set(body["cortes_riesgo"]) == {"alto", "medio"}
+
+def test_root_redirects_to_docs(client):
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/docs"
