@@ -199,7 +199,7 @@ Las carpetas vacías se mantienen con un archivo `.gitkeep`.
 
 ## Cómo instalar y correr el proyecto
 
-Requisitos: Python 3.10 o superior y Git.
+Requisitos: Git y Python entre 3.10 y 3.13 (recomendado 3.10, con el que se entrena el modelo). scikit-learn queda fijo en 1.7.2 para que el modelo cargue igual en todos lados, y la 1.8 ya no instala en 3.10. El Docker de la API ya trae su propio Python.
 
 ```bash
 # 1. Clonar el repo y pararse en developer
