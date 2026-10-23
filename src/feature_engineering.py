@@ -79,9 +79,9 @@ def load_geolocation(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
 def normalize_zip_prefix(zip_prefix: pd.Series) -> pd.Series:
     """Prefijo postal como texto de 5 dígitos con ceros a la izquierda.
 
-    Los CSV de Kaggle traen "01037" y los del GitHub de Olist traen 1037: sin
-    normalizar, el cruce cliente/vendedor con la geolocalización falla en silencio
-    y la distancia queda vacía para todos los prefijos que empiezan con 0.
+    En los CSV del GitHub de Olist la geolocalización trae "01037" y clientes y
+    vendedores traen 1037: sin normalizar, el cruce falla en silencio y la
+    distancia queda vacía para todos los prefijos que empiezan con 0.
     """
     return zip_prefix.astype(str).str.zfill(ZIP_PREFIX_LENGTH)
 
