@@ -50,7 +50,7 @@ Respuesta (números ilustrativos, dependen del artefacto entrenado):
 - **Solo variables conocidas al aprobar el pago (decisión 4).** El esquema rechaza con error 422 cualquier campo que no conozca, como las fechas de despacho o entrega o la reseña. La fuga de datos se frena en la entrada, no solo en el entrenamiento.
 - **Los faltantes se aceptan.** Cualquier variable puede venir vacía; el pipeline la imputa con lo aprendido en train (mediana o `unknown`).
 - **Sin modelo, error claro.** Si no existe el artefacto, `/health` responde `sin_modelo` y `/predict` devuelve 503 con la instrucción para generarlo.
-- **La probabilidad se lee como orden, no como tasa exacta.** En los meses nuevos la calibración sobrestima (riesgo medio 8,3 % contra 3,5 % real en test, decisión 9). Lo confiable es el nivel de riesgo.
+- **La probabilidad se lee como orden, no como tasa exacta.** En los meses nuevos la calibración sobrestima (riesgo medio 9,3 % contra 3,5 % real en test, decisión 9). Lo confiable es el nivel de riesgo.
 - **Las variables se calculan antes de llamar a la API.** La API recibe la fila del pedido ya armada, como la produce `src/feature_engineering.py`. Calcularlas desde los datos crudos queda para una versión posterior.
 
 ## Tests
