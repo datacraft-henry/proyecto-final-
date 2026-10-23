@@ -1,334 +1,267 @@
-# 🚚 FleetLogix — Sistema de Gestión Logística Masiva
+# Olist Delivery Risk
 
-> Migración de sistemas legacy a una infraestructura de datos moderna con más de **505,000 registros** sintéticos que simulan dos años de operación histórica.
+Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las entregas de pedidos de Olist, utilizando información comercial y logística disponible al momento de aprobar la compra.
 
----
+**Estado:** cierre del Sprint 1 (DEMO 1, 14 de octubre de 2026). Base de datos, EDA, target, modelo principal calibrado y niveles de riesgo terminados. La app en Streamlit, la API y el tablero de Power BI son del Sprint 2.
 
-## 📋 Tabla de Contenidos
+## Índice
 
-- [Introducción](#introducción)
-- [Stack Tecnológico](#stack-tecnológico)
-- [Arquitectura de Datos](#arquitectura-de-datos)
-- [Modelo Relacional](#modelo-relacional)
-- [Reglas de Negocio](#reglas-de-negocio)
-- [Generación de Datos Sintéticos](#generación-de-datos-sintéticos)
-- [Optimización y Performance](#optimización-y-performance)
-- [Data Warehouse en Snowflake](#data-warehouse-en-snowflake)
-- [Pipeline ETL](#pipeline-etl)
+1. [Problema de negocio](#problema-de-negocio)
+2. [Objetivo](#objetivo)
+3. [Alcance](#alcance)
+4. [Datos](#datos)
+5. [Definición de la predicción](#definición-de-la-predicción)
+6. [Variables candidatas](#variables-candidatas)
+7. [Metodología](#metodología)
+8. [Evaluación](#evaluación)
+9. [Dónde está cada entregable](#dónde-está-cada-entregable)
+10. [Estructura prevista](#estructura-prevista)
+11. [Herramientas previstas](#herramientas-previstas)
+12. [Cómo instalar y correr el proyecto](#cómo-instalar-y-correr-el-proyecto)
+13. [Cómo trabajamos con Git](#cómo-trabajamos-con-git)
+14. [Limitaciones](#limitaciones)
+15. [Próximos pasos](#próximos-pasos)
+16. [Autoría](#autoría)
 
----
+## Problema de negocio
 
-## Introducción
+Los retrasos en las entregas pueden afectar la experiencia del cliente. Identificar anticipadamente los pedidos con mayor riesgo de demora permitiría orientar el seguimiento logístico y la comunicación preventiva.
 
-**FleetLogix** es una empresa de logística de gran escala que requería migrar sus sistemas legacy a una infraestructura de datos moderna y robusta.
+Este proyecto explora la siguiente pregunta:
 
-El objetivo principal fue diseñar un modelo relacional capaz de soportar más de **505,000 registros**, garantizando la integridad referencial y la coherencia temporal de las operaciones.
+> ¿Podemos predecir si un pedido llegará después del día prometido utilizando únicamente información disponible al aprobar la compra?
 
-Como Científico de Datos, lideré la generación de datos sintéticos realistas que simulan dos años de operación histórica, permitiendo el análisis de rutas, mantenimientos y eficiencia de entregas.
+## Objetivo
 
----
+Desarrollar y evaluar un modelo de clasificación que estime el riesgo de entrega tardía de un pedido.
 
-## Stack Tecnológico
+La predicción busca apoyar la priorización del seguimiento logístico. Su impacto sobre los retrasos y la satisfacción del cliente requeriría una validación posterior en una operación real.
 
-| Capa | Tecnología | Propósito |
-|------|-----------|-----------|
-| Base de Datos Relacional | PostgreSQL | Modelo transaccional |
-| Lenguaje | Python 3.x | Generación y ETL |
-| Generación de datos | Faker | Datos de identidad y localización |
-| Procesamiento | Pandas & NumPy | Distribuciones estadísticas |
-| Conexión BD | Psycopg2 | Batch Insert a PostgreSQL |
-| Data Warehouse | Snowflake | Análisis dimensional |
-| Orquestación ETL | Python + Schedule | Automatización diaria |
+## Alcance
 
----
+La primera versión se enfocará en:
 
-## Arquitectura de Datos
+- Explorar la calidad de los datos y las relaciones entre las tablas.
+- Construir una tabla analítica con una fila por pedido.
+- Analizar factores asociados con entregas tardías.
+- Entrenar y comparar modelos de clasificación.
+- Evaluar la detección de retrasos y la generación de falsas alertas.
+- Desarrollar una demo en Streamlit.
 
-El modelo se centra en la entidad **`trips` (Viajes)**, que actúa como el núcleo transaccional conectando:
+La recomendación de acciones para aumentar ventas y la predicción de cancelaciones quedan fuera del alcance inicial.
 
-```
-                    ┌─────────────┐
-                    │   vehicles  │
-                    └──────┬──────┘
-                           │
-┌─────────────┐    ┌───────▼──────┐    ┌─────────────┐
-│   drivers   ├───►│    trips     ├───►│  deliveries │
-└─────────────┘    └───────┬──────┘    └─────────────┘
-                           │
-                    ┌──────▼──────┐    ┌─────────────┐
-                    │   routes    │    │ maintenance │
-                    └─────────────┘    └─────────────┘
-```
+## Datos
 
-| Entidad | Rol en el modelo |
-|---------|-----------------|
-| `trips` | **Tabla de hechos** — núcleo transaccional |
-| `drivers` | Dimensión — recursos humanos |
-| `vehicles` | Dimensión — activos físicos |
-| `routes` | Dimensión — logística geográfica |
-| `deliveries` | Entidad de detalle — depende de trips |
-| `maintenance` | Entidad de detalle — depende de vehicles |
+Se utilizará el conjunto público [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), con pedidos históricos de 2016 a 2018.
 
----
+| Archivo | Contenido |
+|---|---|
+| `olist_orders_dataset.csv` | Pedidos, estados y fechas |
+| `olist_order_items_dataset.csv` | Artículos, vendedores, precios y fletes |
+| `olist_customers_dataset.csv` | Identificadores y ubicación de clientes |
+| `olist_order_payments_dataset.csv` | Información de pagos |
+| `olist_order_reviews_dataset.csv` | Valoraciones y comentarios |
+| `olist_products_dataset.csv` | Categorías y características de productos |
+| `olist_sellers_dataset.csv` | Información de vendedores |
+| `olist_geolocation_dataset.csv` | Coordenadas asociadas a códigos postales |
+| `product_category_name_translation.csv` | Traducción de categorías al inglés |
 
-## Modelo Relacional
+Los datos originales se descargarán desde la fuente y se almacenarán localmente en `data/raw/`. No se incluirán en este repositorio. Su uso está sujeto a las condiciones y la licencia indicadas en la fuente.
 
-### Tablas principales
+## Definición de la predicción
 
-```sql
--- Vehículos
-vehicles (vehicle_id, license_plate, vehicle_type, 
-          capacity_kg, fuel_type, acquisition_date, status)
+**Unidad de análisis:** un pedido.
 
--- Conductores
-drivers (driver_id, employee_code, first_name, last_name,
-         license_number, license_expiry, phone, hire_date, status)
+**Momento de predicción:** aprobación de la compra.
 
--- Rutas
-routes (route_id, route_code, origin_city, destination_city,
-        distance_km, estimated_duration_hours, toll_cost)
+**Variable objetivo:** `pedido_retrasado`.
 
--- Viajes (hechos)
-trips (trip_id, vehicle_id, driver_id, route_id,
-       departure_datetime, arrival_datetime,
-       fuel_consumed_liters, total_weight_kg, status)
+| Valor | Definición |
+|---|---|
+| `1` | La entrega ocurrió después del día estimado |
+| `0` | La entrega ocurrió el día estimado o antes |
 
--- Entregas
-deliveries (delivery_id, trip_id, tracking_number, customer_name,
-            delivery_address, package_weight_kg,
-            scheduled_datetime, delivered_datetime,
-            delivery_status, recipient_signature)
+La comparación se realizará por día calendario, sin considerar la hora.
 
--- Mantenimientos
-maintenance (maintenance_id, vehicle_id, maintenance_date,
-             maintenance_type, description, cost,
-             next_maintenance_date, performed_by)
-```
+Para la primera versión se utilizarán pedidos con estado entregado y fechas válidas de entrega real y estimada. Los pedidos sin información suficiente no se etiquetarán automáticamente como puntuales.
 
-### Optimizaciones aplicadas
+Esta selección limita las conclusiones a pedidos con entrega observada.
 
-```sql
--- Índices B-Tree en columnas de filtrado frecuente
-CREATE INDEX idx_maintenance_date    ON maintenance (maintenance_date);
-CREATE INDEX idx_trips_route_avg_fuel ON trips (route_id, fuel_consumed_liters);
-CREATE INDEX idx_trips_driver_id      ON trips (driver_id);
-```
+## Variables candidatas
 
----
+Se evaluarán características como:
 
-## Reglas de Negocio
+- Fecha de compra y de aprobación.
+- Ubicación del cliente y de los vendedores.
+- Categorías y cantidad de artículos.
+- Precio y valor del flete.
+- Peso y dimensiones de los productos.
+- Tipo de pago y número de cuotas.
+- Tiempo prometido para la entrega.
+- Distancia aproximada entre origen y destino.
 
-Las siguientes reglas fueron implementadas durante la generación de datos para garantizar consistencia y realismo:
+La disponibilidad de cada variable en el momento de predicción se revisará antes de incluirla. Los pedidos con múltiples artículos o vendedores requerirán reglas de agregación explícitas.
 
-**Consistencia Temporal**
-Ningún vehículo puede llegar a su destino antes de su hora de salida:
-```
-arrival_datetime > departure_datetime
-```
+La fecha real de entrega se utilizará para construir la variable objetivo, pero no como entrada del modelo. Tampoco se utilizarán reseñas posteriores del mismo pedido ni otros datos conocidos después del momento de predicción.
 
-**Realismo Operativo**
-La distribución de viajes sigue una curva de probabilidad horaria, concentrando la actividad en horarios laborales (no uniforme aleatoria).
+## Metodología
 
-**Mantenimiento Preventivo**
-Se automatizó la generación de registros de mantenimiento por cada **20 viajes** realizados por vehículo.
+1. **Exploración y calidad:** revisar tipos de datos, faltantes, duplicados y coherencia de fechas.
+2. **Integración:** unir las tablas controlando sus relaciones para evitar multiplicar pedidos o importes.
+3. **Preparación:** construir la variable objetivo y las características predictoras.
+4. **División temporal:** separar periodos de entrenamiento, validación y prueba.
+5. **Modelado:** comparar una referencia sencilla con regresión logística y modelos de árboles.
+6. **Evaluación:** analizar métricas, umbrales de alerta y tipos de error.
+7. **Comunicación:** documentar resultados, limitaciones y funcionamiento de la demo.
 
-**Densidad de Carga**
-Cada viaje agrupa entre **2 y 6 entregas** individuales, con una distribución normal centrada en 4 paquetes.
+Las transformaciones que aprendan de los datos se ajustarán únicamente con el conjunto de entrenamiento. El conjunto de prueba se reservará para la evaluación final.
 
----
+## Evaluación
 
-## Generación de Datos Sintéticos
+Se utilizarán:
 
-### Método `_get_hourly_distribution()`
+- **Recall:** proporción de retrasos reales que el modelo detecta.
+- **Precision:** proporción de alertas que corresponden a retrasos reales.
+- **F1-score:** medida que combina precision y recall.
+- **PR-AUC:** resumen del comportamiento de precision y recall al variar el umbral.
+- **ROC-AUC:** capacidad de discriminación entre clases.
+- **Matriz de confusión:** detalle de aciertos y errores.
 
-No genera viajes — define el **comportamiento del tiempo**. Crea una curva de probabilidad para que los viajes sigan patrones de tráfico humano reales, no distribución uniforme.
+El umbral de alerta se seleccionará con los datos de validación, considerando el equilibrio entre detectar retrasos y generar falsas alertas.
 
-### Método `generate_trips()`
+También se revisará la calibración antes de interpretar los valores estimados como probabilidades de riesgo.
 
-Transforma las reglas de negocio en datos concretos:
+## Dónde está cada entregable
 
-1. **Consulta disponibilidad:** trae vehículos activos, conductores activos y rutas existentes
-2. **Selección aleatoria:** elige vehículo, conductor y ruta de las listas disponibles
-3. **Aplica distribución horaria:** decide la hora de salida según `_get_hourly_distribution()`
-4. **Simula realidad:**
-   - Tiempo de viaje: estimado × factor entre `0.8` y `1.3` (simula tráfico/clima)
-   - Combustible: distancia × factor de eficiencia del vehículo
-   - Carga: entre el `40%` y `90%` de la capacidad total
-5. **Estado del viaje:** `completed` si arrival < now, `in_progress` si no
+| Entregable | Dónde |
+|---|---|
+| Decisiones del equipo (11) | [`docs/decisiones.md`](docs/decisiones.md) |
+| Exploración del target y control de fuga | [`notebooks/01_exploracion_y_target.ipynb`](notebooks/01_exploracion_y_target.ipynb) · [`docs/aporte_mathias_exploracion.md`](docs/aporte_mathias_exploracion.md) |
+| EDA con gráficos | [`notebooks/02_eda_graficos.ipynb`](notebooks/02_eda_graficos.ipynb) · [`reports/figuras/`](reports/figuras/) · [`docs/aporte_alexis_eda_graficos.md`](docs/aporte_alexis_eda_graficos.md) |
+| Base de datos en BigQuery | [`sql/`](sql/) |
+| Target y período de estudio | [`src/target.py`](src/target.py) |
+| Baseline | [`src/baseline.py`](src/baseline.py) · [`docs/decisiones_baseline.md`](docs/decisiones_baseline.md) |
+| Features, comparación de modelos y modelo principal | [`src/feature_engineering.py`](src/feature_engineering.py) · [`src/training.py`](src/training.py) · [`docs/decisiones_modelos.md`](docs/decisiones_modelos.md) |
+| Calibración y niveles de riesgo | [`src/calibration.py`](src/calibration.py) · [`src/umbral.py`](src/umbral.py) |
 
-### Carga masiva a PostgreSQL
+| App de riesgo por pedido | [`app/streamlit_app.py`](app/streamlit_app.py) (pantalla) · [`app/riesgo.py`](app/riesgo.py) (lógica) · [`app/vista.py`](app/vista.py) (filtros y formato) · [`app/estilos.py`](app/estilos.py) (CSS) |
 
-```python
-# Patrón Batch Insert con psycopg2
-cursor.executemany(INSERT_QUERY, lista_de_tuplas)
-connection.commit()
-```
+| Métricas de evaluación, plan de validación y justificación del modelo | [`docs/metricas_evaluacion.md`](docs/metricas_evaluacion.md) |
 
----
+| Esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) |
+| Tests (anti-fuga, target, calibración) | [`tests/`](tests/) |
 
-## Optimización y Performance
+## Estructura prevista
 
-Resultados del análisis con `EXPLAIN ANALYZE` antes y después de agregar índices:
+| Ruta | Propósito |
+|---|---|
+| `data/raw/` | Datos originales locales, excluidos de Git |
+| `data/processed/` | Datos preparados locales, excluidos de Git |
+| `notebooks/` | Exploración, análisis y experimentos (sin lógica reutilizable) |
+| `src/` | Código reutilizable: carga, target, variables, modelos |
+| `tests/` | Tests automáticos (`pytest`) |
+| `sql/` | Consultas y modelo de datos |
+| `app/` | Demo en Streamlit |
+| `docs/` | Decisiones del equipo (`docs/decisiones.md`) |
+| `reports/` | Gráficos y resultados |
+| `requirements.txt` | Dependencias del proyecto |
+| `.gitignore` | Reglas de exclusión de archivos |
+| `README.md` | Documentación principal |
 
-| Query | Descripción | Antes | Después | Mejora |
-|-------|-------------|-------|---------|--------|
-| Q6 | Mantenimientos 2026 con UPPER y SUBSTRING | 145 ms | 1.42 ms | **~100x** |
-| Q7 | Rutas más pesadas (> 500 km acumulados) | 151 ms | 117 ms | 1.3x |
-| Q8 | Ciudades con más gasto de combustible | 89.9 ms | 54 ms | 1.7x |
-| Q9 | Consumo de ruta vs promedio global (CTE) | 153 ms | 145 ms | 1.1x |
-| Q10 | Escalafón de conductores con RANK() | 153 ms | 54 ms | 2.8x |
+Las carpetas vacías se mantienen con un archivo `.gitkeep`.
 
-### Queries de negocio implementadas
+## Herramientas previstas
 
-```sql
--- Q6: Mantenimientos del año con formato
-SELECT UPPER(v.license_plate)         AS placa_mayusculas,
-       m.maintenance_date,
-       SUBSTRING(m.description, 1, 15) AS resumen_descripcion
-FROM maintenance m
-JOIN vehicles v ON m.vehicle_id = v.vehicle_id
-WHERE m.maintenance_date BETWEEN '2026-01-01' AND '2026-12-31';
+- Python.
+- Pandas y NumPy.
+- Matplotlib y Seaborn.
+- Scikit-learn.
+- Jupyter en Visual Studio Code.
+- Streamlit.
+- Git y GitHub.
 
--- Q7: Rutas con más de 500 km acumulados
-SELECT r.route_code, SUM(r.distance_km) AS total_km
-FROM trips t
-JOIN routes r ON r.route_id = t.route_id
-GROUP BY r.route_code
-HAVING SUM(r.distance_km) > 500;
+## Cómo instalar y correr el proyecto
 
--- Q8: Ciudades con mayor consumo promedio de combustible
-SELECT r.destination_city, AVG(t.fuel_consumed_liters) AS avg_fuel
-FROM trips t
-JOIN routes r ON t.route_id = r.route_id
-GROUP BY r.destination_city;
+Requisitos: Python 3.10 o superior y Git.
 
--- Q9: Rutas con consumo mayor al promedio global (CTE)
-WITH ResumenRutas AS (
-    SELECT r.route_code, AVG(t.fuel_consumed_liters) AS prom_ruta
-    FROM trips t
-    JOIN routes r ON t.route_id = r.route_id
-    GROUP BY r.route_code
-)
-SELECT * FROM ResumenRutas
-WHERE prom_ruta > (SELECT AVG(fuel_consumed_liters) FROM trips);
+```bash
+# 1. Clonar el repo y pararse en developer
+git clone https://github.com/CamilaUribeNorena/proyecto-final-.git
+cd proyecto-final-
+git checkout developer
 
--- Q10: Escalafón de conductores para bonos (función de ventana)
-SELECT d.first_name,
-       COUNT(t.trip_id)                              AS viajes,
-       RANK() OVER (ORDER BY COUNT(t.trip_id) DESC)  AS puesto
-FROM drivers d
-JOIN trips t ON d.driver_id = t.driver_id
-GROUP BY d.driver_id, d.first_name;
+# 2. Crear un entorno virtual e instalar dependencias
+python -m venv .venv
+# Windows (PowerShell): .venv\Scripts\Activate.ps1
+# macOS / Linux:        source .venv/bin/activate
+pip install -r requirements.txt
+
+# 3. Descargar los datos
+#    Bajar el zip de https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
+#    y descomprimir los 9 CSV dentro de data/raw/ (Git los ignora).
+
+# 4. Verificar que todo funciona
+python -m pytest
+
+# 5. Entrenar y comparar modelos (escribe reports/comparacion_modelos.json)
+python -m src.training
+
+# 6. Calibrar y guardar el modelo final (models/modelo_principal_calibrado.joblib)
+python -m src.umbral
+
+# 7. Abrir la app de riesgo por pedido
+streamlit run app/streamlit_app.py
 ```
 
----
+Los notebooks se abren con Jupyter desde la raíz del repo (`jupyter notebook`) o desde Visual Studio Code.
 
-## Data Warehouse en Snowflake
+## Cómo trabajamos con Git
 
-### Configuración inicial
+- `main`: solo entregas.
+- `developer`: integración. Todo entra por pull request aprobado por Agustina.
+- `feature/E#-descripcion`: una rama por tarea, creada desde `developer` actualizado.
+- Commits chicos con prefijo: `feat:`, `fix:`, `docs:`, `chore:`, `test:`.
+- Los datos y los documentos personales nunca se suben (ver `.gitignore`).
 
-```sql
-USE ROLE ACCOUNTADMIN;
-CREATE WAREHOUSE IF NOT EXISTS FLEETLOGIX_WH
-  WITH WAREHOUSE_SIZE = 'XSMALL'
-  AUTO_SUSPEND = 60
-  AUTO_RESUME = TRUE;
+El detalle y las decisiones del equipo están en [`docs/decisiones.md`](docs/decisiones.md).
 
-CREATE DATABASE IF NOT EXISTS FLEETLOGIX_DW;
-USE SCHEMA ANALYTICS;
-```
+## Limitaciones
 
-### Modelo Estrella
+- Los datos son históricos y corresponden al contexto brasileño.
+- No se dispone de información completa sobre clima, tránsito o capacidad operativa.
+- Entrenar con pedidos entregados introduce una selección que debe considerarse al interpretar los resultados.
+- Las asociaciones observadas no demuestran relaciones causales.
+- El desempeño con estos datos no garantiza resultados equivalentes en una operación actual.
+- El proyecto es un prototipo educativo y no está validado para uso en producción.
 
-```
-              dim_date
-                 │
-dim_time ────────┤
-                 │
-dim_vehicle ─────┼──── fact_deliveries ──── dim_customer
-                 │
-dim_driver ──────┤
-                 │
-              dim_route
-```
+## Próximos pasos
 
-### Features de Snowflake habilitadas
+- [x] Configurar el entorno local y las dependencias.
+- [x] Incorporar las reglas de exclusión de datos en `.gitignore`.
+- [x] Explorar la tabla de pedidos (`notebooks/01_exploracion_y_target.ipynb`).
+- [x] Construir la tabla analítica (`src/features.py`, una fila por pedido).
+- [x] Baseline entrenado y evaluado (regresión logística con validación temporal, `src/baseline.py`).
+- [x] Desarrollar el análisis exploratorio (`notebooks/02_eda_graficos.ipynb`).
+- [x] Entrenar y evaluar modelos (`src/training.py`, ver `docs/decisiones_modelos.md`).
+- [x] Calibrar el modelo principal y definir niveles de riesgo (`src/umbral.py`).
+- [x] Construir la demo en Streamlit y la API
+- [x] Sumar las features del EDA de Mathias (`src/feature_ablation.py`, ver `docs/decisiones_modelos.md`, "Sprint 2").
+- [x] Usar el target único en el script de unificación (`src/unificacion.py`).
+- [x] Empaquetar la API en Docker (`Dockerfile`, ver `docs/api.md`).
+- [ ] Construir el tablero de Power BI.
+- [ ] Monitorear el volumen del nivel de riesgo alto.
+- [ ] Escribir el informe final y preparar la defensa.
 
-**Time Travel — 30 días**
-```sql
-ALTER TABLE fact_deliveries SET DATA_RETENTION_TIME_IN_DAYS = 30;
+## Autoría
 
--- Uso: ver datos como estaban hace 1 hora
-SELECT * FROM fact_deliveries AT (OFFSET => -3600);
-```
+Proyecto final de Data Science de Henry, desarrollado por el equipo **DataCraft**:
 
-**Vistas seguras por rol**
-```sql
--- Ventas: solo ve clientes no gubernamentales
-CREATE SECURE VIEW v_sales_deliveries AS
-SELECT fecha, cliente, peso, status, ingreso
-FROM fact_deliveries f
-JOIN dim_customer c ON f.customer_key = c.customer_key
-WHERE c.customer_type != 'Gobierno';
+| Integrante | Rol | Aportes principales |
+|---|---|---|
+| Agustina Baez | Data Scientist · Scrum Master | Proceso del equipo, revisión y aprobación de los pull requests |
+| Cristian Atrio | Data Scientist | Entorno y repositorio, baseline, features y modelo principal |
+| Alexis Sircelj | Data Scientist | Base de datos, esquema estrella para Power BI y EDA con gráficos |
+| Mathias Chaparro | Data Scientist | Exploración del target, control de fuga y auditoría de datos |
+| María Camila Uribe Noreña | Data Scientist | Período de estudio, base en BigQuery, calibración y niveles de riesgo |
 
--- Operaciones: visibilidad completa
-CREATE SECURE VIEW v_operations_deliveries AS
-SELECT conductor, vehiculo, ruta, retraso, combustible ...
-FROM fact_deliveries ...;
-```
-
-**Control de acceso**
-```sql
-CREATE ROLE SALES_ANALYST;
-CREATE ROLE OPERATIONS_ANALYST;
-
-GRANT SELECT ON VIEW v_sales_deliveries      TO ROLE SALES_ANALYST;
-GRANT SELECT ON VIEW v_operations_deliveries TO ROLE OPERATIONS_ANALYST;
-```
-
----
-
-## Pipeline ETL
-
-Pipeline automatizado en Python que corre diariamente a las **2:00 AM**:
-
-```
-PostgreSQL (datos del día anterior)
-          │
-          │  EXTRACT — query con JOINs sobre trips, drivers, vehicles, routes
-          ▼
-     DataFrame Pandas
-          │
-          │  TRANSFORM
-          │  · Calcular delivery_time_minutes y delay_minutes
-          │  · Calcular fuel_efficiency_km_per_liter
-          │  · Calcular cost_per_delivery y revenue_per_delivery
-          │  · Validaciones de calidad (pesos, tiempos negativos)
-          │  · SCD Tipo 2 para drivers y vehicles
-          ▼
-     DataFrame limpio
-          │
-          ├──► load_dimensions() → dim_customer, dim_driver (MERGE)
-          │
-          └──► load_facts()      → fact_deliveries (batch insert)
-                    │
-                    ▼
-             daily_summary (totales pre-calculados para dashboards)
-```
-
-### Métricas del pipeline
-
-```python
-self.metrics = {
-    'records_extracted':  0,
-    'records_transformed': 0,
-    'records_loaded':     0,
-    'errors':             0
-}
-```
-
----
-
-## Autor
-
-Proyecto desarrollado como ejercicio de arquitectura de datos moderna, cubriendo el ciclo completo desde el modelo relacional transaccional hasta el Data Warehouse analítico en la nube.
+Proyecto educativo y de prototipado.
