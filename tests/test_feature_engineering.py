@@ -8,6 +8,7 @@ from src.feature_engineering import (
     build_model_dataset,
     haversine_km,
     model_feature_lists,
+    normalize_zip_prefix,
     product_features,
     route_features,
     seller_history_features,
@@ -271,3 +272,24 @@ def test_zip_without_valid_coordinates_has_no_distance(full_tables):
     _, dataset = _context({**full_tables, "geolocation": geolocation})
     assert pd.isna(dataset.loc["o3", "max_distance_km"])  # cliente en 20000
     assert dataset.loc["o2", "max_distance_km"] == pytest.approx(0)
+
+
+def test_zip_prefixes_without_leading_zeros_still_match(full_tables):
+    """Los CSV del GitHub de Olist traen 1000 en vez de "01000": la distancia tiene que ser la misma."""
+    as_numbers = {
+        **full_tables,
+        "customers": full_tables["customers"].assign(customer_zip_code_prefix=[1000, 1000, 20000]),
+        "sellers": full_tables["sellers"].assign(seller_zip_code_prefix=[1000, 20000]),
+        "geolocation": full_tables["geolocation"].assign(geolocation_zip_code_prefix=[1000, 1000, 20000]),
+    }
+    mixed = {**full_tables, "geolocation": as_numbers["geolocation"]}
+    _, expected = _context(full_tables)
+    for tables in (as_numbers, mixed):
+        _, dataset = _context(tables)
+        pd.testing.assert_series_equal(dataset["max_distance_km"], expected["max_distance_km"])
+    assert expected["max_distance_km"].notna().all()
+
+
+def test_normalize_zip_prefix_pads_to_five_digits():
+    result = normalize_zip_prefix(pd.Series([1037, "1037", "01037", 20000]))
+    assert result.tolist() == ["01037", "01037", "01037", "20000"]

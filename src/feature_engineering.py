@@ -35,6 +35,7 @@ from src.target import TARGET_COL, build_target
 
 GEOLOCATION_FILE = "olist_geolocation_dataset.csv"
 EARTH_RADIUS_KM = 6371.0
+ZIP_PREFIX_LENGTH = 5
 # Extremos del territorio de Brasil (con un margen chico), en grados
 BRAZIL_LAT_RANGE = (-33.8, 5.3)
 BRAZIL_LNG_RANGE = (-74.0, -34.7)
@@ -75,6 +76,16 @@ def load_geolocation(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
     return pd.read_csv(path, dtype={"geolocation_zip_code_prefix": str})
 
 
+def normalize_zip_prefix(zip_prefix: pd.Series) -> pd.Series:
+    """Prefijo postal como texto de 5 dígitos con ceros a la izquierda.
+
+    En los CSV del GitHub de Olist la geolocalización trae "01037" y clientes y
+    vendedores traen 1037: sin normalizar, el cruce falla en silencio y la
+    distancia queda vacía para todos los prefijos que empiezan con 0.
+    """
+    return zip_prefix.astype(str).str.zfill(ZIP_PREFIX_LENGTH)
+
+
 def _zip_centroids(geolocation: pd.DataFrame) -> pd.DataFrame:
     """Lat/lng mediana por prefijo de código postal (el geolocation trae varias filas por prefijo).
 
@@ -87,6 +98,7 @@ def _zip_centroids(geolocation: pd.DataFrame) -> pd.DataFrame:
     inside_brazil = lat.between(*BRAZIL_LAT_RANGE) & lng.between(*BRAZIL_LNG_RANGE)
     return (
         geolocation.loc[inside_brazil]
+        .assign(geolocation_zip_code_prefix=lambda d: normalize_zip_prefix(d["geolocation_zip_code_prefix"]))
         .groupby("geolocation_zip_code_prefix")[["geolocation_lat", "geolocation_lng"]]
         .median()
         .rename(columns={"geolocation_lat": "lat", "geolocation_lng": "lng"})
@@ -112,8 +124,12 @@ def route_features(context: FeatureContext) -> pd.DataFrame:
     tables = context.tables
     centroids = _zip_centroids(tables["geolocation"])
     orders = tables["orders"][["order_id", "customer_id"]]
-    customers = tables["customers"][["customer_id", "customer_zip_code_prefix", "customer_state"]]
-    sellers = tables["sellers"][["seller_id", "seller_zip_code_prefix", "seller_state"]]
+    customers = tables["customers"][["customer_id", "customer_zip_code_prefix", "customer_state"]].assign(
+        customer_zip_code_prefix=lambda d: normalize_zip_prefix(d["customer_zip_code_prefix"])
+    )
+    sellers = tables["sellers"][["seller_id", "seller_zip_code_prefix", "seller_state"]].assign(
+        seller_zip_code_prefix=lambda d: normalize_zip_prefix(d["seller_zip_code_prefix"])
+    )
 
     pairs = (
         tables["items"][["order_id", "seller_id"]].drop_duplicates()

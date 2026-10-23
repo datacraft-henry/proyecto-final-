@@ -157,7 +157,7 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | Baseline | [`src/baseline.py`](src/baseline.py) · [`docs/decisiones_baseline.md`](docs/decisiones_baseline.md) |
 | Features, comparación de modelos y modelo principal | [`src/feature_engineering.py`](src/feature_engineering.py) · [`src/training.py`](src/training.py) · [`docs/decisiones_modelos.md`](docs/decisiones_modelos.md) |
 | Features del sprint 2 (carga del vendedor y feriados) | [`src/feature_ablation.py`](src/feature_ablation.py) · [`docs/aporte_mathias_features_sprint2.md`](docs/aporte_mathias_features_sprint2.md) |
-| Calibración y niveles de riesgo | [`src/calibration.py`](src/calibration.py) · [`src/umbral.py`](src/umbral.py) |
+| Calibración y niveles de riesgo | [`src/calibration.py`](src/calibration.py) · [`src/umbral.py`](src/umbral.py) · [`src/monitoreo.py`](src/monitoreo.py) |
 | Métricas de evaluación y justificación del modelo | [`docs/metricas_evaluacion.md`](docs/metricas_evaluacion.md) |
 | App de riesgo por pedido | [`app/streamlit_app.py`](app/streamlit_app.py) (pantalla) · [`app/riesgo.py`](app/riesgo.py) (lógica) · [`app/vista.py`](app/vista.py) (filtros y formato) · [`app/estilos.py`](app/estilos.py) (CSS) |
 | API de predicción y Docker | [`api/main.py`](api/main.py) · [`Dockerfile`](Dockerfile) · [`docs/api.md`](docs/api.md) |
@@ -226,6 +226,9 @@ python -m src.training
 # 6. Calibrar y guardar el modelo final (models/modelo_principal_calibrado.joblib)
 python -m src.umbral
 
+# 6b. Monitorear por mes el volumen y la tasa del nivel alto (reports/monitoreo_nivel_alto.json)
+python -m src.monitoreo
+
 # 7. Abrir la app de riesgo por pedido
 streamlit run app/streamlit_app.py
 
@@ -273,7 +276,7 @@ El detalle y las decisiones del equipo están en [`docs/decisiones.md`](docs/dec
 - [x] Usar el target único en el script de unificación (`src/unificacion.py`).
 - [x] Empaquetar la API en Docker (`Dockerfile`, ver `docs/api.md`).
 - [ ] Construir el tablero de Power BI.
-- [ ] Monitorear el volumen del nivel de riesgo alto.
+- [x] Monitorear el volumen del nivel de riesgo alto (`src/monitoreo.py`).
 - [ ] Escribir el informe final y preparar la defensa.
 
 ## Autoría

@@ -6,9 +6,9 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Solo lo que la API necesita para cargar el artefacto y predecir.
-# scikit-learn fijo en 1.8.0, la versión con la que se entrena el modelo: con otra, el .joblib puede dar resultados inválidos.
+# scikit-learn fijo en 1.7.2, la versión con la que se entrena el modelo (la 1.8 ya no instala en Python 3.10): con otra, el .joblib puede dar resultados inválidos.
 RUN pip install --no-cache-dir \
-    "pandas>=2.0" "numpy>=1.24" "scikit-learn==1.8.0" "joblib>=1.3" \
+    "pandas>=2.0" "numpy>=1.24" "scikit-learn==1.7.2" "joblib>=1.3" \
     "fastapi>=0.110" "uvicorn>=0.27" "holidays>=0.40"
 
 COPY src/ src/
