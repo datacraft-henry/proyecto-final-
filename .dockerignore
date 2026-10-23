@@ -1,0 +1,11 @@
+# Solo entran src/ y api/ (ver Dockerfile). Esto deja afuera datos, modelos y todo lo pesado.
+data/
+models/
+reports/
+notebooks/
+.git/
+.venv/
+__pycache__/
+*.pyc
+*.csv
+*.zip

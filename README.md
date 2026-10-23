@@ -2,7 +2,7 @@
 
 Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las entregas de pedidos de Olist, utilizando información comercial y logística disponible al momento de aprobar la compra.
 
-**Estado:** cierre del Sprint 1 (DEMO 1, 14 de octubre de 2026). Base de datos, EDA, target, modelo principal calibrado y niveles de riesgo terminados. La app en Streamlit, la API y el tablero de Power BI son del Sprint 2.
+**Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, app de Streamlit, API y Docker. En curso: tablero de Power BI y monitoreo del nivel alto.
 
 ## Índice
 
@@ -11,23 +11,24 @@ Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las ent
 3. [Alcance](#alcance)
 4. [Datos](#datos)
 5. [Definición de la predicción](#definición-de-la-predicción)
-6. [Variables candidatas](#variables-candidatas)
+6. [Variables evaluadas](#variables-evaluadas)
 7. [Metodología](#metodología)
 8. [Evaluación](#evaluación)
-9. [Dónde está cada entregable](#dónde-está-cada-entregable)
-10. [Estructura prevista](#estructura-prevista)
-11. [Herramientas previstas](#herramientas-previstas)
-12. [Cómo instalar y correr el proyecto](#cómo-instalar-y-correr-el-proyecto)
-13. [Cómo trabajamos con Git](#cómo-trabajamos-con-git)
-14. [Limitaciones](#limitaciones)
-15. [Próximos pasos](#próximos-pasos)
-16. [Autoría](#autoría)
+9. [Resultados](#resultados)
+10. [Dónde está cada entregable](#dónde-está-cada-entregable)
+11. [Estructura del repositorio](#estructura-del-repositorio)
+12. [Herramientas](#herramientas)
+13. [Cómo instalar y correr el proyecto](#cómo-instalar-y-correr-el-proyecto)
+14. [Cómo trabajamos con Git](#cómo-trabajamos-con-git)
+15. [Limitaciones](#limitaciones)
+16. [Próximos pasos](#próximos-pasos)
+17. [Autoría](#autoría)
 
 ## Problema de negocio
 
 Los retrasos en las entregas pueden afectar la experiencia del cliente. Identificar anticipadamente los pedidos con mayor riesgo de demora permitiría orientar el seguimiento logístico y la comunicación preventiva.
 
-Este proyecto explora la siguiente pregunta:
+Este proyecto responde la siguiente pregunta:
 
 > ¿Podemos predecir si un pedido llegará después del día prometido utilizando únicamente información disponible al aprobar la compra?
 
@@ -39,20 +40,20 @@ La predicción busca apoyar la priorización del seguimiento logístico. Su impa
 
 ## Alcance
 
-La primera versión se enfocará en:
+El proyecto cubre:
 
 - Explorar la calidad de los datos y las relaciones entre las tablas.
 - Construir una tabla analítica con una fila por pedido.
 - Analizar factores asociados con entregas tardías.
 - Entrenar y comparar modelos de clasificación.
 - Evaluar la detección de retrasos y la generación de falsas alertas.
-- Desarrollar una demo en Streamlit.
+- Desarrollar una app en Streamlit y una API de predicción.
 
-La recomendación de acciones para aumentar ventas y la predicción de cancelaciones quedan fuera del alcance inicial.
+La recomendación de acciones para aumentar ventas y la predicción de cancelaciones quedan fuera del alcance.
 
 ## Datos
 
-Se utilizará el conjunto público [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), con pedidos históricos de 2016 a 2018.
+Usamos el conjunto público [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), con pedidos históricos de 2016 a 2018.
 
 | Archivo | Contenido |
 |---|---|
@@ -66,7 +67,7 @@ Se utilizará el conjunto público [Brazilian E-Commerce Public Dataset by Olist
 | `olist_geolocation_dataset.csv` | Coordenadas asociadas a códigos postales |
 | `product_category_name_translation.csv` | Traducción de categorías al inglés |
 
-Los datos originales se descargarán desde la fuente y se almacenarán localmente en `data/raw/`. No se incluirán en este repositorio. Su uso está sujeto a las condiciones y la licencia indicadas en la fuente.
+Los datos originales se descargan de Kaggle y se guardan localmente en `data/raw/`. No se incluyen en este repositorio. Su uso está sujeto a las condiciones y la licencia indicadas en la fuente.
 
 ## Definición de la predicción
 
@@ -81,15 +82,15 @@ Los datos originales se descargarán desde la fuente y se almacenarán localment
 | `1` | La entrega ocurrió después del día estimado |
 | `0` | La entrega ocurrió el día estimado o antes |
 
-La comparación se realizará por día calendario, sin considerar la hora.
+La comparación se hace por día calendario, sin considerar la hora (decisión 2).
 
-Para la primera versión se utilizarán pedidos con estado entregado y fechas válidas de entrega real y estimada. Los pedidos sin información suficiente no se etiquetarán automáticamente como puntuales.
+Usamos los pedidos entregados con fechas válidas de entrega real y estimada, comprados entre enero de 2017 y agosto de 2018 (decisión 8): 96.203 pedidos, 6,79 % con retraso. Los pedidos sin información suficiente no se etiquetan como puntuales.
 
 Esta selección limita las conclusiones a pedidos con entrega observada.
 
-## Variables candidatas
+## Variables evaluadas
 
-Se evaluarán características como:
+Evaluamos características como:
 
 - Fecha de compra y de aprobación.
 - Ubicación del cliente y de los vendedores.
@@ -100,25 +101,25 @@ Se evaluarán características como:
 - Tiempo prometido para la entrega.
 - Distancia aproximada entre origen y destino.
 
-La disponibilidad de cada variable en el momento de predicción se revisará antes de incluirla. Los pedidos con múltiples artículos o vendedores requerirán reglas de agregación explícitas.
+Cada variable se revisó para confirmar que se conoce al aprobar el pago. Los pedidos con varios artículos o vendedores se agregan con reglas explícitas (`src/features.py`). El modelo final usa las variables del baseline sin el mes de compra, más la distancia cliente-vendedor y los feriados nacionales de los 7 días siguientes (`docs/decisiones_modelos.md`).
 
-La fecha real de entrega se utilizará para construir la variable objetivo, pero no como entrada del modelo. Tampoco se utilizarán reseñas posteriores del mismo pedido ni otros datos conocidos después del momento de predicción.
+La fecha real de entrega se usa para construir la variable objetivo, pero no como entrada del modelo. Tampoco se usan reseñas ni otros datos conocidos después del momento de predicción (decisión 4); hay tests que fallan si alguno entra.
 
 ## Metodología
 
-1. **Exploración y calidad:** revisar tipos de datos, faltantes, duplicados y coherencia de fechas.
-2. **Integración:** unir las tablas controlando sus relaciones para evitar multiplicar pedidos o importes.
-3. **Preparación:** construir la variable objetivo y las características predictoras.
-4. **División temporal:** separar periodos de entrenamiento, validación y prueba.
-5. **Modelado:** comparar una referencia sencilla con regresión logística y modelos de árboles.
-6. **Evaluación:** analizar métricas, umbrales de alerta y tipos de error.
-7. **Comunicación:** documentar resultados, limitaciones y funcionamiento de la demo.
+1. **Exploración y calidad:** revisamos tipos de datos, faltantes, duplicados y coherencia de fechas.
+2. **Integración:** unimos las tablas controlando sus relaciones para evitar multiplicar pedidos o importes.
+3. **Preparación:** construimos la variable objetivo y las características predictoras.
+4. **División temporal:** separamos períodos de entrenamiento, validación y prueba.
+5. **Modelado:** comparamos una regresión logística de referencia con una logística con selección de variables y modelos de árboles, con validación cruzada temporal de 4 tramos.
+6. **Evaluación:** analizamos métricas, umbrales de alerta y tipos de error.
+7. **Comunicación:** documentamos resultados, limitaciones y funcionamiento de la demo.
 
-Las transformaciones que aprendan de los datos se ajustarán únicamente con el conjunto de entrenamiento. El conjunto de prueba se reservará para la evaluación final.
+Las transformaciones que aprenden de los datos se ajustan solo con el conjunto de entrenamiento. El conjunto de prueba se usa una sola vez, para la evaluación final.
 
 ## Evaluación
 
-Se utilizarán:
+Usamos:
 
 - **Recall:** proporción de retrasos reales que el modelo detecta.
 - **Precision:** proporción de alertas que corresponden a retrasos reales.
@@ -127,57 +128,73 @@ Se utilizarán:
 - **ROC-AUC:** capacidad de discriminación entre clases.
 - **Matriz de confusión:** detalle de aciertos y errores.
 
-El umbral de alerta se seleccionará con los datos de validación, considerando el equilibrio entre detectar retrasos y generar falsas alertas.
+El modelo se elige por PR-AUC, porque con 6,8 % de retrasos la ROC-AUC sobrestima el desempeño. Las probabilidades se recalibran con Platt en validación, y los niveles de riesgo se definen por volumen de pedidos, no por un umbral fijo (decisión 9). Detalle en `docs/metricas_evaluacion.md`.
 
-También se revisará la calibración antes de interpretar los valores estimados como probabilidades de riesgo.
+## Resultados
+
+Modelo final: regresión logística, reentrenada con train + validación y calibrada. Resultados en test (fines de mayo a agosto de 2018, 19.293 pedidos, 3,5 % de retraso):
+
+- **ROC-AUC 0,707** y **PR-AUC 0,073**, el doble del piso de 0,035 (la tasa de retraso).
+- Los árboles empataron en validación cruzada pero cayeron a ROC-AUC 0,58 en test, porque Olist acortó los plazos prometidos.
+
+| Nivel | % de pedidos | Tasa de retraso | % de los retrasos que capta | Lift |
+|---|---|---|---|---|
+| Alto | 11,2 % | 7,5 % | 24,1 % | 2,15 |
+| Medio | 22,0 % | 5,6 % | 35,2 % | 1,60 |
+| Bajo | 66,8 % | 2,1 % | 40,7 % | 0,61 |
+
+Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para **priorizar** el seguimiento, no para predecir con certeza qué pedido se va a retrasar: lo confiable es el orden y el nivel, no la probabilidad exacta. Fuente: `docs/metricas_evaluacion.md` y `docs/decisiones_modelos.md`.
 
 ## Dónde está cada entregable
 
 | Entregable | Dónde |
 |---|---|
-| Decisiones del equipo (11) | [`docs/decisiones.md`](docs/decisiones.md) |
+| Decisiones del equipo | [`docs/decisiones.md`](docs/decisiones.md) |
 | Exploración del target y control de fuga | [`notebooks/01_exploracion_y_target.ipynb`](notebooks/01_exploracion_y_target.ipynb) · [`docs/aporte_mathias_exploracion.md`](docs/aporte_mathias_exploracion.md) |
 | EDA con gráficos | [`notebooks/02_eda_graficos.ipynb`](notebooks/02_eda_graficos.ipynb) · [`reports/figuras/`](reports/figuras/) · [`docs/aporte_alexis_eda_graficos.md`](docs/aporte_alexis_eda_graficos.md) |
 | Base de datos en BigQuery | [`sql/`](sql/) |
-| Target y período de estudio | [`src/target.py`](src/target.py) |
+| Target único y período de estudio | [`src/target.py`](src/target.py) |
 | Baseline | [`src/baseline.py`](src/baseline.py) · [`docs/decisiones_baseline.md`](docs/decisiones_baseline.md) |
 | Features, comparación de modelos y modelo principal | [`src/feature_engineering.py`](src/feature_engineering.py) · [`src/training.py`](src/training.py) · [`docs/decisiones_modelos.md`](docs/decisiones_modelos.md) |
+| Features del sprint 2 (carga del vendedor y feriados) | [`src/feature_ablation.py`](src/feature_ablation.py) · [`docs/aporte_mathias_features_sprint2.md`](docs/aporte_mathias_features_sprint2.md) |
 | Calibración y niveles de riesgo | [`src/calibration.py`](src/calibration.py) · [`src/umbral.py`](src/umbral.py) |
-
+| Métricas de evaluación y justificación del modelo | [`docs/metricas_evaluacion.md`](docs/metricas_evaluacion.md) |
 | App de riesgo por pedido | [`app/streamlit_app.py`](app/streamlit_app.py) (pantalla) · [`app/riesgo.py`](app/riesgo.py) (lógica) · [`app/vista.py`](app/vista.py) (filtros y formato) · [`app/estilos.py`](app/estilos.py) (CSS) |
+| API de predicción y Docker | [`api/main.py`](api/main.py) · [`Dockerfile`](Dockerfile) · [`docs/api.md`](docs/api.md) |
+| Unificación y esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) · [`src/unificacion.py`](src/unificacion.py) |
+| Tests (anti-fuga, target, calibración, app y API) | [`tests/`](tests/) |
 
-| Métricas de evaluación, plan de validación y justificación del modelo | [`docs/metricas_evaluacion.md`](docs/metricas_evaluacion.md) |
-
-| Esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) |
-| Tests (anti-fuga, target, calibración) | [`tests/`](tests/) |
-
-## Estructura prevista
+## Estructura del repositorio
 
 | Ruta | Propósito |
 |---|---|
 | `data/raw/` | Datos originales locales, excluidos de Git |
 | `data/processed/` | Datos preparados locales, excluidos de Git |
 | `notebooks/` | Exploración, análisis y experimentos (sin lógica reutilizable) |
-| `src/` | Código reutilizable: carga, target, variables, modelos |
+| `src/` | Código reutilizable: carga, target, variables, modelos, calibración |
 | `tests/` | Tests automáticos (`pytest`) |
-| `sql/` | Consultas y modelo de datos |
-| `app/` | Demo en Streamlit |
-| `docs/` | Decisiones del equipo (`docs/decisiones.md`) |
+| `sql/` | Esquema y carga de la base en BigQuery |
+| `scripts/` | Scripts reproducibles que no son lógica del modelo (unificación para Power BI) |
+| `app/` | App de riesgo por pedido en Streamlit |
+| `api/` | API de predicción (FastAPI) |
+| `docs/` | Decisiones del equipo, métricas y aportes |
 | `reports/` | Gráficos y resultados |
+| `models/` | Modelos entrenados, locales y excluidos de Git |
+| `Dockerfile` | Imagen de la API |
 | `requirements.txt` | Dependencias del proyecto |
-| `.gitignore` | Reglas de exclusión de archivos |
-| `README.md` | Documentación principal |
 
 Las carpetas vacías se mantienen con un archivo `.gitkeep`.
 
-## Herramientas previstas
+## Herramientas
 
-- Python.
-- Pandas y NumPy.
+- Python, pandas y NumPy.
+- Scikit-learn y joblib.
 - Matplotlib y Seaborn.
-- Scikit-learn.
-- Jupyter en Visual Studio Code.
-- Streamlit.
+- Streamlit (app) y FastAPI con Uvicorn (API).
+- Docker.
+- Google BigQuery y Power BI.
+- pytest.
+- Jupyter y Visual Studio Code.
 - Git y GitHub.
 
 ## Cómo instalar y correr el proyecto
@@ -186,7 +203,7 @@ Requisitos: Python 3.10 o superior y Git.
 
 ```bash
 # 1. Clonar el repo y pararse en developer
-git clone https://github.com/CamilaUribeNorena/proyecto-final-.git
+git clone https://github.com/datacraft-henry/proyecto-final-.git
 cd proyecto-final-
 git checkout developer
 
@@ -211,6 +228,13 @@ python -m src.umbral
 
 # 7. Abrir la app de riesgo por pedido
 streamlit run app/streamlit_app.py
+
+# 8. Levantar la API (documentación en http://127.0.0.1:8000/docs)
+uvicorn api.main:app --reload
+
+# 9. O correr la API en Docker (ver docs/api.md)
+docker build -t datacraft-api .
+docker run -p 8000:8000 -v "$(pwd)/models:/app/models" datacraft-api
 ```
 
 Los notebooks se abren con Jupyter desde la raíz del repo (`jupyter notebook`) o desde Visual Studio Code.
@@ -245,8 +269,9 @@ El detalle y las decisiones del equipo están en [`docs/decisiones.md`](docs/dec
 - [x] Entrenar y evaluar modelos (`src/training.py`, ver `docs/decisiones_modelos.md`).
 - [x] Calibrar el modelo principal y definir niveles de riesgo (`src/umbral.py`).
 - [x] Construir la demo en Streamlit y la API
-- [ ] Sumar las features del EDA de Mathias (ruta, carga del vendedor, feriados).
-- [ ] Usar el target único en el script de unificación.
+- [x] Sumar las features del EDA de Mathias (`src/feature_ablation.py`, ver `docs/decisiones_modelos.md`, "Sprint 2").
+- [x] Usar el target único en el script de unificación (`src/unificacion.py`).
+- [x] Empaquetar la API en Docker (`Dockerfile`, ver `docs/api.md`).
 - [ ] Construir el tablero de Power BI.
 - [ ] Monitorear el volumen del nivel de riesgo alto.
 - [ ] Escribir el informe final y preparar la defensa.
