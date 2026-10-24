@@ -2,7 +2,20 @@
 
 Es el tercer uso de la misma señal de riesgo de la propuesta del 7 de octubre ("una señal, tres usos"): logística vigila los pedidos de riesgo alto (hecho), quien define las promesas ajusta los días por ruta (propuesto) y, antes de comprar, el cliente ve los vendedores con menos retraso al mismo precio (este prototipo). **Es un prototipo de visión, no parte del producto:** no usa el modelo ni cambia la app o la API.
 
-Cómo correrlo, desde la raíz del repo, con los 9 CSV en `data/raw/`:
+## Por qué es un prototipo y no parte de la app
+
+- **Es otro usuario y otro momento.** La app sirve a operaciones después de aprobar el pago: qué pedidos vigilar. Este prototipo sirve al cliente antes de comprar: a qué vendedor comprarle.
+- **No usa el modelo.** Ordena a los vendedores por su tasa de retraso histórica, no por la predicción calibrada. No pasó por la validación temporal, la calibración ni la elección de modelos que respaldan la app.
+- **La evidencia es observacional.** Que los vendedores de menor riesgo se retrasen menos no prueba que recomendarlos reduzca el retraso. Para eso hace falta una prueba A/B.
+- **Los datos no alcanzan para un producto.** Solo vemos lo que se vendió, no qué vendedores ofrecían cada producto. Solo el 63 % de los pedidos de 2018 tiene un vendedor con historial, y 7 de cada 10 retrasos ocurren en el transporte (ver "Límites").
+- **Está fuera del alcance acordado.** El README deja la recomendación fuera del alcance del proyecto; integrarla sería un cambio de alcance que decide el equipo.
+- **No arriesga el producto.** Al estar aparte, si algo falla aquí, la app, la API y sus tests no se ven afectados.
+
+Por eso vive en `prototipos/`: para mostrar la visión de "una señal, tres usos" y los datos que harían falta para construirla de verdad.
+
+## Cómo correrlo
+
+Desde la raíz del repo, con los 9 CSV en `data/raw/`:
 
 ```bash
 streamlit run prototipos/recomendador_vendedores.py
