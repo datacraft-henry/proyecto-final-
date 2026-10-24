@@ -1,9 +1,11 @@
+from typing import get_args
+
 import numpy as np
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import Pedido, app
+from api.main import EstadoBrasil, Pedido, TipoPago, app
 from src.calibration import PlattCalibrator, risk_level_cuts
 from src.features import LEAKY_COLUMNS
 from src.training import make_logistic, selected_feature_lists
@@ -107,6 +109,20 @@ def test_missing_values_are_imputed(client):
 def test_invalid_values_are_rejected(client):
     assert client.post("/predict", json={"pedidos": [_pedido(purchase_hour=25)]}).status_code == 422
     assert client.post("/predict", json={"pedidos": []}).status_code == 422
+
+
+def test_unknown_categories_are_rejected(client):
+    """Un estado o un tipo de pago que no existen en Olist no llegan al modelo como "desconocidos"."""
+    for campo, valor in [("customer_state", "st"), ("customer_state", "XX"), ("main_payment_type", "string")]:
+        response = client.post("/predict", json={"pedidos": [_pedido(**{campo: valor})]})
+        assert response.status_code == 422, (campo, valor)
+        assert response.json()["detail"][0]["loc"][-1] == campo
+
+
+def test_category_lists_cover_olist():
+    """Los 27 estados de Brasil y los tipos de pago de Olist tienen que estar permitidos."""
+    assert len(get_args(EstadoBrasil)) == 27
+    assert {"credit_card", "boleto", "voucher", "debit_card"} <= set(get_args(TipoPago))
 
 
 def test_without_model_predict_returns_503(client):

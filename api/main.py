@@ -29,6 +29,14 @@ MODEL_PATH_ENV = "MODELO_PATH"
 MAX_PEDIDOS = 1000
 TEXT_FIELDS = ["order_id", "customer_state", "main_payment_type", "seller_other_state"]
 
+# Valores que existen en los datos de Olist: cualquier otro se rechaza con 422 en vez de
+# llegar al modelo como una categoría desconocida (que el pipeline imputaría sin avisar).
+EstadoBrasil = Literal[
+    "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
+    "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",
+]
+TipoPago = Literal["credit_card", "boleto", "voucher", "debit_card", "not_defined"]
+
 
 class Pedido(BaseModel):
     """Un pedido con las variables que se conocen al aprobar el pago.
@@ -57,8 +65,8 @@ class Pedido(BaseModel):
     n_national_holidays_next_7d: int | None = Field(
         None, ge=0, le=7, description="Feriados nacionales de Brasil en los 7 días desde la aprobación"
     )
-    customer_state: str | None = Field(None, min_length=2, max_length=2, description="Estado del cliente, por ejemplo SP")
-    main_payment_type: str | None = Field(None, description="credit_card, boleto, voucher o debit_card")
+    customer_state: EstadoBrasil | None = Field(None, description="Sigla del estado del cliente, por ejemplo SP")
+    main_payment_type: TipoPago | None = Field(None, description="Tipo de pago principal del pedido")
     seller_other_state: Literal["True", "False", "unknown"] | None = Field(
         None, description="Si algún vendedor está en otro estado que el cliente"
     )
