@@ -74,13 +74,27 @@ Estas acciones se proponen a partir del balance realizado, para mantener las pr�
 
 ## 6. Evidencias de organización
 
-Las evidencias que acompañan este balance son:
+### Cronograma del sprint 1
 
-- Cronograma del sprint 1.
-- Cronograma del sprint 2.
-- Captura del tablero de Trello.
-- Captura de la tarjeta “Ceremonias Scrum · Agustina”.
+![Cronograma del sprint 1](sprint-1.jpeg)
 
-Las capturas permiten observar la planificación, la distribución de responsabilidades y el registro de las reuniones.
+### Cronograma del sprint 2
 
-**Aclaración sobre las fechas:** el cronograma compartido del sprint 2 muestra un cierre el 11/11. Según la corrección informada por la Scrum Master, el período correspondiente es del 15/10 al 28/10.
+![Cronograma del sprint 2](sprint-2.jpeg)
+
+**Aclaración:** el cronograma original muestra un cierre el 11/11.
+El período correcto, confirmado por la Scrum Master, es del 15/10 al 28/10.
+
+### Tablero de Trello
+
+![Tablero de Trello](tablero-trello.png)
+
+Las marcas verdes identifican tareas completadas, aunque algunas
+tarjetas permanecen en la columna “Por hacer”.
+
+### Registro de ceremonias Scrum
+
+![Ceremonias Scrum](ceremonias-scrum.png)
+
+La tarjeta registra la organización y los horarios previstos
+para las ceremonias del equipo.
