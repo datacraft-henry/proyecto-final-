@@ -8,7 +8,7 @@ Es el tercer uso de la misma señal de riesgo de la propuesta del 7 de octubre (
 - **No usa el modelo.** Ordena a los vendedores por su tasa de retraso histórica, no por la predicción calibrada. No pasó por la validación temporal, la calibración ni la elección de modelos que respaldan la app.
 - **La evidencia es observacional.** Que los vendedores de menor riesgo se retrasen menos no prueba que recomendarlos reduzca el retraso. Para eso hace falta una prueba A/B.
 - **Los datos no alcanzan para un producto.** Solo vemos lo que se vendió, no qué vendedores ofrecían cada producto. Solo el 63 % de los pedidos de 2018 tiene un vendedor con historial, y 7 de cada 10 retrasos ocurren en el transporte (ver "Límites").
-- **Está fuera del alcance acordado.** El README deja la recomendación fuera del alcance del proyecto; integrarla sería un cambio de alcance que decide el equipo.
+- **Queda como prototipo hasta que el PO confirme el alcance.** La propuesta de "una señal, tres usos" lo incluye como tercer uso; integrarlo al producto es una decisión de alcance que se registra en docs/decisiones.md.
 - **No arriesga el producto.** Al estar aparte, si algo falla aquí, la app, la API y sus tests no se ven afectados.
 
 Por eso vive en `prototipos/`: para mostrar la visión de "una señal, tres usos" y los datos que harían falta para construirla de verdad.
