@@ -45,6 +45,28 @@ Respuesta (números ilustrativos, dependen del artefacto entrenado):
 {"predicciones": [{"order_id": "demo-1", "prob_retraso": 0.1234, "nivel_riesgo": "alto"}]}
 ```
 
+## Pedidos reales para la demo
+
+`scripts/demo_pedidos.py` saca del período de test tres pedidos reales, con el modelo ya generado:
+
+```bash
+python -m scripts.demo_pedidos       # escribe reports/demo_pedidos.json
+```
+
+| Caso | Qué muestra |
+|---|---|
+| `alto_retrasado` | El modelo lo marca alto y de verdad llegó tarde (acierto) |
+| `bajo_a_tiempo` | El modelo lo marca bajo y llegó a tiempo (acierto) |
+| `alto_a_tiempo` | El modelo lo marca alto y llegó a tiempo (falsa alarma: en el nivel alto no todos se atrasan) |
+
+El script también imprime las fechas reales de cada pedido (compra, fecha prometida y entrega). Para mandarlos a la API, pegar el contenido de `reports/demo_pedidos.json` en `POST /predict` desde `/docs` o, en Windows PowerShell:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:8000/predict -Method Post -ContentType "application/json" -InFile reports/demo_pedidos.json | ConvertTo-Json -Depth 5
+```
+
+Los pedidos se eligen con una semilla fija, pero pueden cambiar según la fuente de los CSV (Kaggle o el repositorio de Olist en GitHub). El JSON es una salida generada y no se versiona.
+
 ## Reglas de diseño
 
 - **Solo variables conocidas al aprobar el pago (decisión 4).** El esquema rechaza con error 422 cualquier campo que no conozca, como las fechas de despacho o entrega o la reseña. La fuga de datos se frena en la entrada, no solo en el entrenamiento.
