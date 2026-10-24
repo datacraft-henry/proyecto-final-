@@ -2,7 +2,7 @@
 
 Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las entregas de pedidos de Olist, utilizando información comercial y logística disponible al momento de aprobar la compra.
 
-**Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, app de Streamlit, API y Docker. En curso: tablero de Power BI y monitoreo del nivel alto.
+**Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, monitoreo del nivel alto, app de Streamlit, API, Docker y pedidos de ejemplo para la demo. En curso: tablero de Power BI, informe final y presentación.
 
 ## Índice
 
@@ -161,6 +161,7 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | Métricas de evaluación y justificación del modelo | [`docs/metricas_evaluacion.md`](docs/metricas_evaluacion.md) |
 | App de riesgo por pedido | [`app/streamlit_app.py`](app/streamlit_app.py) (pantalla) · [`app/riesgo.py`](app/riesgo.py) (lógica) · [`app/vista.py`](app/vista.py) (filtros y formato) · [`app/estilos.py`](app/estilos.py) (CSS) |
 | API de predicción y Docker | [`api/main.py`](api/main.py) · [`Dockerfile`](Dockerfile) · [`docs/api.md`](docs/api.md) |
+| Pedidos reales para la demo de la API | [`scripts/demo_pedidos.py`](scripts/demo_pedidos.py) · [`docs/api.md`](docs/api.md#pedidos-reales-para-la-demo) |
 | Unificación y esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) · [`src/unificacion.py`](src/unificacion.py) |
 | Tests (anti-fuga, target, calibración, app y API) | [`tests/`](tests/) |
 
@@ -174,7 +175,7 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | `src/` | Código reutilizable: carga, target, variables, modelos, calibración |
 | `tests/` | Tests automáticos (`pytest`) |
 | `sql/` | Esquema y carga de la base en BigQuery |
-| `scripts/` | Scripts reproducibles que no son lógica del modelo (unificación para Power BI) |
+| `scripts/` | Scripts reproducibles que no son lógica del modelo (unificación para Power BI y pedidos de la demo) |
 | `app/` | App de riesgo por pedido en Streamlit |
 | `api/` | API de predicción (FastAPI) |
 | `docs/` | Decisiones del equipo, métricas y aportes |
@@ -238,6 +239,9 @@ uvicorn api.main:app --reload
 # 9. O correr la API en Docker (ver docs/api.md)
 docker build -t datacraft-api .
 docker run -p 8000:8000 -v "$(pwd)/models:/app/models" datacraft-api
+
+# 10. Sacar 3 pedidos reales del test para probar la API (reports/demo_pedidos.json)
+python -m scripts.demo_pedidos
 ```
 
 Los notebooks se abren con Jupyter desde la raíz del repo (`jupyter notebook`) o desde Visual Studio Code.
