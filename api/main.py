@@ -8,6 +8,10 @@ Cómo correrla, desde la raíz del repo:
 
     python -m src.umbral                 # genera el artefacto (una sola vez)
     uvicorn api.main:app --reload        # documentación en http://127.0.0.1:8000/docs
+
+Dos formas de pedir el riesgo: POST /predict recibe las variables ya calculadas, y
+POST /predict/pedido recibe solo el order_id y arma las variables desde los datos con
+el mismo pipeline del entrenamiento (src/feature_engineering.py).
 """
 
 from __future__ import annotations
@@ -23,6 +27,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.data_loading import RAW_DIR, load_raw_tables
+from src.feature_engineering import build_model_dataset, load_geolocation
 from src.umbral import CALIBRATED_MODEL_PATH, predict_risk
 
 MODEL_PATH_ENV = "MODELO_PATH"
@@ -95,6 +101,7 @@ def model_path() -> Path:
 async def lifespan(app: FastAPI):
     path = model_path()
     app.state.artifact = joblib.load(path) if path.exists() else None
+    app.state.dataset = None  # los pedidos se arman la primera vez que se piden por order_id
     yield
 
 
@@ -153,4 +160,61 @@ def predict(body: PredictRequest, request: Request) -> PredictResponse:
             Prediccion(order_id=oid, prob_retraso=round(float(p), 4), nivel_riesgo=n)
             for oid, p, n in zip(orders["order_id"], risk["prob_retraso"], risk["nivel_riesgo"])
         ]
+    )
+
+
+# --- Predicción por order_id: la API arma las variables desde los datos -------------------
+
+DATA_DIR_ENV = "DATOS_PATH"
+
+
+class PedidoIdRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    order_ids: list[str] = Field(..., min_length=1, max_length=MAX_PEDIDOS, description="order_id de Olist")
+
+
+class PredictPedidoResponse(BaseModel):
+    predicciones: list[Prediccion]
+    no_encontrados: list[str] = Field(
+        ..., description="order_id que no están en los datos del período de estudio (no entregados, fuera del período o inexistentes)"
+    )
+
+
+def data_dir() -> Path:
+    return Path(os.environ.get(DATA_DIR_ENV, RAW_DIR))
+
+
+def _dataset(request: Request, anchor: str) -> pd.DataFrame:
+    """Pedidos con sus variables, armados con el mismo pipeline del entrenamiento. Se arma una sola vez."""
+    dataset = getattr(request.app.state, "dataset", None)
+    if dataset is None:
+        try:
+            tables = {**load_raw_tables(data_dir()), "geolocation": load_geolocation(data_dir())}
+        except FileNotFoundError as error:
+            raise HTTPException(status_code=503, detail=f"No hay datos para armar los pedidos: {error}") from error
+        dataset = build_model_dataset(tables, anchor).set_index("order_id")
+        request.app.state.dataset = dataset
+    return dataset
+
+
+@app.post("/predict/pedido", response_model=PredictPedidoResponse)
+def predict_pedido(body: PedidoIdRequest, request: Request) -> PredictPedidoResponse:
+    """Riesgo de pedidos de Olist a partir de su order_id, sin calcular variables a mano.
+
+    Hoy los datos salen de los CSV de data/raw; el paso siguiente es leerlos de BigQuery.
+    """
+    artifact = _artifact(request)
+    dataset = _dataset(request, artifact["anchor"])
+    pedidos = list(dict.fromkeys(body.order_ids))  # sin repetidos, en el orden pedido
+    encontrados = [oid for oid in pedidos if oid in dataset.index]
+    predicciones = []
+    if encontrados:
+        orders = dataset.loc[encontrados, artifact["features"]]
+        risk = predict_risk(artifact, orders)
+        predicciones = [
+            Prediccion(order_id=oid, prob_retraso=round(float(p), 4), nivel_riesgo=n)
+            for oid, p, n in zip(encontrados, risk["prob_retraso"], risk["nivel_riesgo"])
+        ]
+    return PredictPedidoResponse(
+        predicciones=predicciones, no_encontrados=[oid for oid in pedidos if oid not in dataset.index]
     )
