@@ -163,6 +163,7 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | API de predicción y Docker | [`api/main.py`](api/main.py) · [`Dockerfile`](Dockerfile) · [`docs/api.md`](docs/api.md) |
 | Unificación y esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) · [`src/unificacion.py`](src/unificacion.py) |
 | Tests (anti-fuga, target, calibración, app y API) | [`tests/`](tests/) |
+| Prototipo de visión: vendedores según riesgo de retraso | [`prototipos/recomendador_vendedores.py`](prototipos/recomendador_vendedores.py) · [`src/recomendador.py`](src/recomendador.py) · [`docs/recomendador.md`](docs/recomendador.md) |
 
 ## Estructura del repositorio
 
@@ -178,6 +179,7 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | `app/` | App de riesgo por pedido en Streamlit |
 | `api/` | API de predicción (FastAPI) |
 | `docs/` | Decisiones del equipo, métricas y aportes |
+| `prototipos/` | Prototipos de visión, aparte del producto (recomendación de vendedores) |
 | `reports/` | Gráficos y resultados |
 | `models/` | Modelos entrenados, locales y excluidos de Git |
 | `Dockerfile` | Imagen de la API |
