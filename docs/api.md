@@ -79,7 +79,7 @@ Invoke-RestMethod -Uri http://localhost:8000/predict/pedido -Method Post -Conten
 Devuelve `predicciones` (las mismas probabilidades que `/predict` con esos pedidos) y `no_encontrados`, con los `order_id` que no están en el período de estudio (no entregados, fuera de enero 2017 – agosto 2018 o inexistentes).
 
 - **La primera llamada tarda** (unos 30 segundos): arma todos los pedidos una vez y los deja en memoria. Antes de una demo, hacer una llamada de calentamiento.
-- **Hoy funciona con pedidos históricos,** los de los CSV. El paso siguiente es que lea los pedidos nuevos de BigQuery, con la misma lógica y otra fuente de datos (ver el informe, próximos pasos).
+- **La predicción solo es honesta con pedidos del período de test** (desde el 27 de mayo de 2018). El modelo final se reentrenó con train + validación, así que los pedidos anteriores ya los vio al entrenar: su riesgo sale optimista. Los 3 pedidos de `scripts/demo_pedidos.py` son de test.
 - Sin datos en la carpeta, responde 503 con la ruta que buscó.
 
 ## Reglas de diseño
