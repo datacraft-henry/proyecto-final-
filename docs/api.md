@@ -19,7 +19,8 @@ Para usar otro artefacto: `MODELO_PATH=ruta/al/modelo.joblib uvicorn api.main:ap
 | Método | Ruta | Qué hace |
 |---|---|---|
 | `GET` | `/health` | Si hay modelo cargado, con qué se entrenó, sus variables y los cortes de riesgo |
-| `POST` | `/predict` | Probabilidad y nivel de riesgo de hasta 1.000 pedidos por llamada |
+| `POST` | `/predict` | Probabilidad y nivel de riesgo de hasta 1.000 pedidos por llamada, con las variables ya calculadas |
+| `POST` | `/predict/pedido` | Lo mismo a partir del `order_id`: la API arma las variables desde los datos |
 | `GET` | `/docs` | Documentación interactiva (Swagger) para probar la API desde el navegador |
 
 ## Ejemplo
@@ -67,17 +68,31 @@ Invoke-RestMethod -Uri http://localhost:8000/predict -Method Post -ContentType "
 
 Los pedidos se eligen con una semilla fija, pero pueden cambiar según la fuente de los CSV (Kaggle o el repositorio de Olist en GitHub). El JSON es una salida generada y no se versiona.
 
+## Predecir por order_id
+
+`POST /predict/pedido` recibe solo el `order_id` y arma las variables con el mismo pipeline del entrenamiento (`build_model_dataset` de `src/feature_engineering.py`), a partir de los CSV de `data/raw/` (o de la carpeta de la variable `DATOS_PATH`). Así nadie calcula las 17 variables a mano, y no hay una segunda implementación que pueda dar distinto que el modelo.
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:8000/predict/pedido -Method Post -ContentType "application/json" -Body '{"order_ids": ["ae213a9f84c777fb7a31e8c0f09fd30c", "2b5d5c1847d069c5efeb82f4056c15d8", "no-existe"]}' | ConvertTo-Json -Depth 5
+```
+
+Devuelve `predicciones` (las mismas probabilidades que `/predict` con esos pedidos) y `no_encontrados`, con los `order_id` que no están en el período de estudio (no entregados, fuera de enero 2017 – agosto 2018 o inexistentes).
+
+- **La primera llamada tarda** (unos 30 segundos): arma todos los pedidos una vez y los deja en memoria. Antes de una demo, hacer una llamada de calentamiento.
+- **Hoy funciona con pedidos históricos,** los de los CSV. El paso siguiente es que lea los pedidos nuevos de BigQuery, con la misma lógica y otra fuente de datos (ver el informe, próximos pasos).
+- Sin datos en la carpeta, responde 503 con la ruta que buscó.
+
 ## Reglas de diseño
 
 - **Solo variables conocidas al aprobar el pago (decisión 4).** El esquema rechaza con error 422 cualquier campo que no conozca, como las fechas de despacho o entrega o la reseña. La fuga de datos se frena en la entrada, no solo en el entrenamiento.
 - **Los faltantes se aceptan.** Cualquier variable puede venir vacía; el pipeline la imputa con lo aprendido en train (mediana o `unknown`).
 - **Sin modelo, error claro.** Si no existe el artefacto, `/health` responde `sin_modelo` y `/predict` devuelve 503 con la instrucción para generarlo.
 - **La probabilidad se lee como orden, no como tasa exacta.** En los meses nuevos la calibración sobrestima (riesgo medio 9,3 % contra 3,5 % real en test, decisión 9). Lo confiable es el nivel de riesgo.
-- **Las variables se calculan antes de llamar a la API.** La API recibe la fila del pedido ya armada, como la produce `src/feature_engineering.py`. Calcularlas desde los datos crudos queda para una versión posterior.
+- **Las variables salen del mismo pipeline del entrenamiento.** `/predict` recibe la fila ya armada, como la produce `src/feature_engineering.py`, y `/predict/pedido` la arma la propia API con esa misma función. Leer los pedidos desde BigQuery queda para una versión posterior.
 
 ## Tests
 
-`tests/test_api.py`, con un artefacto sintético que no depende de `models/`: el esquema cubre todas las variables del modelo, las columnas con fuga se rechazan, `/predict` da lo mismo que `predict_risk`, los faltantes se imputan, los valores imposibles se rechazan y sin modelo devuelve 503.
+`tests/test_api.py`, con un artefacto sintético que no depende de `models/`: el esquema cubre todas las variables del modelo, las columnas con fuga se rechazan, `/predict` da lo mismo que `predict_risk`, los faltantes se imputan, los valores imposibles se rechazan y sin modelo devuelve 503. `tests/test_api_pedido.py`: `/predict/pedido` da lo mismo que `predict_risk`, separa los `order_id` que no encuentra y responde 503 sin datos o sin modelo.
 
 ## Docker
 
@@ -89,6 +104,6 @@ docker build -t datacraft-api .
 docker run -p 8000:8000 -v "$(pwd)/models:/app/models" datacraft-api
 ```
 
-En Windows PowerShell: `-v "${PWD}/models:/app/models"`. Para probarla: http://localhost:8000/health y http://localhost:8000/docs.
+En Windows PowerShell: `-v "${PWD}/models:/app/models"`. Para usar `/predict/pedido` dentro del contenedor, montar también los CSV: `-v "${PWD}/data/raw:/app/data/raw"`. Para probarla: http://localhost:8000/health y http://localhost:8000/docs.
 
 **Ojo con la versión de scikit-learn:** el modelo solo carga bien con la misma versión con la que se entrenó. Si `python -c "import sklearn; print(sklearn.__version__)"` da una versión distinta a la del contenedor, fijarla en el `Dockerfile` (por ejemplo `"scikit-learn==1.5.2"`).
