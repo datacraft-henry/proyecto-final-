@@ -2,7 +2,9 @@
 
 Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las entregas de pedidos de Olist, utilizando información comercial y logística disponible al momento de aprobar la compra.
 
-**Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, monitoreo del nivel alto, app de Streamlit, API, Docker y pedidos de ejemplo para la demo. En curso: tablero de Power BI, informe final y presentación.
+**Misión de DataCraft:** convertir los datos que una empresa ya tiene en decisiones que su equipo pueda tomar hoy, con modelos honestos sobre lo que saben y lo que no.
+
+**Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, monitoreo del nivel alto, app de Streamlit, API (por variables y por `order_id`), Docker, tests automáticos en GitHub Actions, manual de usuario y prototipo de recomendación de vendedores. En curso: tablero de Power BI, informe final y presentación.
 
 ## Índice
 
@@ -49,7 +51,9 @@ El proyecto cubre:
 - Evaluar la detección de retrasos y la generación de falsas alertas.
 - Desarrollar una app en Streamlit y una API de predicción.
 
-La recomendación de acciones para aumentar ventas y la predicción de cancelaciones quedan fuera del alcance.
+La misma señal de riesgo también sirve para recomendar vendedores con menos retraso histórico. Ese uso queda como **prototipo**, aparte del producto, hasta que el PO confirme el alcance (`docs/recomendador.md`).
+
+Quedan fuera del alcance la recomendación de acciones para aumentar ventas y la predicción de cancelaciones.
 
 ## Datos
 
@@ -163,7 +167,8 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | API de predicción y Docker | [`api/main.py`](api/main.py) · [`Dockerfile`](Dockerfile) · [`docs/api.md`](docs/api.md) |
 | Pedidos reales para la demo de la API | [`scripts/demo_pedidos.py`](scripts/demo_pedidos.py) · [`docs/api.md`](docs/api.md#pedidos-reales-para-la-demo) |
 | Unificación y esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) · [`src/unificacion.py`](src/unificacion.py) |
-| Tests (anti-fuga, target, calibración, app y API) | [`tests/`](tests/) |
+| Manual de usuario (app y API) | [`docs/manual_usuario.md`](docs/manual_usuario.md) |
+| Tests (anti-fuga, target, calibración, app, API y recomendador), corridos en cada PR | [`tests/`](tests/) · [`.github/workflows/tests.yml`](.github/workflows/tests.yml) |
 | Prototipo de visión: vendedores según riesgo de retraso | [`prototipos/recomendador_vendedores.py`](prototipos/recomendador_vendedores.py) · [`src/recomendador.py`](src/recomendador.py) · [`docs/recomendador.md`](docs/recomendador.md) |
 
 ## Estructura del repositorio
@@ -240,7 +245,8 @@ uvicorn api.main:app --reload
 
 # 9. O correr la API en Docker (ver docs/api.md)
 docker build -t datacraft-api .
-docker run -p 8000:8000 -v "$(pwd)/models:/app/models" datacraft-api
+docker run -p 8000:8000 -v "$(pwd)/models:/app/models" -v "$(pwd)/data/raw:/app/data/raw" datacraft-api
+#    (en PowerShell, ${PWD} en lugar de $(pwd); data/raw solo hace falta para /predict/pedido)
 
 # 10. Sacar 3 pedidos reales del test para probar la API (reports/demo_pedidos.json)
 python -m scripts.demo_pedidos
@@ -283,6 +289,10 @@ El detalle y las decisiones del equipo están en [`docs/decisiones.md`](docs/dec
 - [x] Empaquetar la API en Docker (`Dockerfile`, ver `docs/api.md`).
 - [ ] Construir el tablero de Power BI.
 - [x] Monitorear el volumen del nivel de riesgo alto (`src/monitoreo.py`).
+- [x] Predecir por `order_id` desde la API (`docs/api.md`).
+- [x] Correr los tests en cada PR con GitHub Actions (`.github/workflows/tests.yml`).
+- [x] Prototipo de recomendación de vendedores (`docs/recomendador.md`).
+- [x] Escribir el manual de usuario (`docs/manual_usuario.md`).
 - [ ] Escribir el informe final y preparar la defensa.
 
 ## Autoría
@@ -292,9 +302,9 @@ Proyecto final de Data Science de Henry, desarrollado por el equipo **DataCraft*
 | Integrante | Rol | Aportes principales |
 |---|---|---|
 | Agustina Baez | Data Scientist · Scrum Master | Proceso del equipo, revisión y aprobación de los pull requests |
-| Cristian Atrio | Data Scientist | Entorno y repositorio, baseline, features y modelo principal |
+| Cristian Atrio | Data Scientist | Entorno y repositorio, baseline, features, validación temporal, modelo principal, monitoreo, app de Streamlit y GitHub Actions |
 | Alexis Sircelj | Data Scientist | Base de datos, esquema estrella para Power BI y EDA con gráficos |
 | Mathias Chaparro | Data Scientist | Exploración del target, control de fuga y auditoría de datos |
-| María Camila Uribe Noreña | Data Scientist | Período de estudio, base en BigQuery, calibración y niveles de riesgo |
+| María Camila Uribe Noreña | Data Scientist | Período de estudio, base en BigQuery, calibración y niveles de riesgo, API, Docker y prototipo de recomendación de vendedores |
 
 Proyecto educativo y de prototipado.
