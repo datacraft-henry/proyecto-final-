@@ -3,7 +3,7 @@
 Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las entregas de pedidos de Olist, utilizando información comercial y logística disponible al momento de aprobar la compra.
 
 **Misión de DataCraft:** convertir los datos que una empresa ya tiene en decisiones que su equipo pueda tomar hoy, con modelos honestos sobre lo que saben y lo que no.
-
+**Contacto:** equipodatacraft@gmail.com
 **Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, monitoreo del nivel alto, app de Streamlit, API (por variables y por `order_id`), Docker, tests automáticos en GitHub Actions, manual de usuario y sistema de recomendación de vendedores. En curso: tablero de Power BI, informe final y presentación.
 
 ## Índice
