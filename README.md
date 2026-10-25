@@ -3,7 +3,9 @@
 Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las entregas de pedidos de Olist, utilizando información comercial y logística disponible al momento de aprobar la compra.
 
 **Misión de DataCraft:** convertir los datos que una empresa ya tiene en decisiones que su equipo pueda tomar hoy, con modelos honestos sobre lo que saben y lo que no.
+
 **Contacto:** equipodatacraft@gmail.com
+
 **Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, monitoreo del nivel alto, app de Streamlit, API (por variables y por `order_id`), Docker, tests automáticos en GitHub Actions, manual de usuario y sistema de recomendación de vendedores. En curso: tablero de Power BI, informe final y presentación.
 
 ## Índice
@@ -160,7 +162,7 @@ Recomienda 3 vendedores por categoría y estado del cliente, ordenados por el ri
 | Popularidad (baseline) | 69,4 % | 27,7 % | 2,75 % |
 | Azar | 66,1 % | 27,0 % | 3,14 % |
 
-Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (IC 95 % de la diferencia: −0,84 a −0,29 pp). El efecto es modesto y no se distingue del historial: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor. Fuente: `docs/recomendador.md`.
+Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (IC 95 % de la diferencia: −0,84 a −0,29 pp). Los tres criterios superan al azar; el clasificador tiene el menor retraso, pero no se distingue ni del historial ni de la popularidad. El efecto es modesto: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor. Fuente: `docs/recomendador.md`.
 
 ## Dónde está cada entregable
 

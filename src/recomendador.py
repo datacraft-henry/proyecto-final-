@@ -1,16 +1,14 @@
-"""Prototipo de visión: ordenar vendedores por su riesgo de retraso histórico.
+"""Sistema de recomendación: vendedores ordenados por su riesgo de retraso.
 
-Es el tercer uso de la misma señal de riesgo (ver docs/recomendador.md): antes de
-comprar, mostrar al cliente los vendedores con menos retraso. No usa el modelo: ordena
-a cada vendedor por su tasa de retraso ANTES de un corte de fecha y mide si ese orden
-se sostiene DESPUÉS del corte, con el target del proyecto (src/target.py).
+Antes de comprar, en la categoría que busca y para su estado, el cliente ve los vendedores
+con menor riesgo según el clasificador (decisión 12, docs/recomendador.md). La tasa de
+retraso histórica del vendedor (riesgo_vendedores) y la popularidad quedan como baselines.
+Todo se ordena con pedidos ANTES de un corte y se mide DESPUÉS, con el target del proyecto.
 
 Uso:
-    from src.recomendador import preparar
-    candidatos, tercios, resumen = preparar(tablas)
+    python -m src.recomendador          # cifras de docs/recomendador.md
 
-La app está en prototipos/recomendador_vendedores.py. Es una asociación observacional:
-no prueba que recomendar a un vendedor reduzca el retraso.
+Es una asociación observacional: no prueba que recomendar a un vendedor reduzca el retraso.
 """
 
 from __future__ import annotations
