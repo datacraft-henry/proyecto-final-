@@ -8,7 +8,9 @@ Todo se ordena con pedidos ANTES de un corte y se mide DESPUÉS, con el target d
 Uso:
     python -m src.recomendador          # cifras de docs/recomendador.md
 
-Es una asociación observacional: no prueba que recomendar a un vendedor reduzca el retraso.
+La pestaña "Vendedores recomendados" de la app (app/pestana_vendedores.py) usa
+preparar_clasificador, puntaje_vendedores y recomendar. Es una asociación observacional:
+no prueba que recomendar a un vendedor reduzca el retraso.
 """
 
 from __future__ import annotations

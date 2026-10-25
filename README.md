@@ -184,7 +184,7 @@ Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (I
 | Unificación y esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) · [`src/unificacion.py`](src/unificacion.py) |
 | Manual de usuario (app y API) | [`docs/manual_usuario.md`](docs/manual_usuario.md) |
 | Tests (anti-fuga, target, calibración, app, API y recomendador), corridos en cada PR | [`tests/`](tests/) · [`.github/workflows/tests.yml`](.github/workflows/tests.yml) |
-| Sistema de recomendación de vendedores | [`src/recomendador.py`](src/recomendador.py) · [`docs/recomendador.md`](docs/recomendador.md) · [`prototipos/recomendador_vendedores.py`](prototipos/recomendador_vendedores.py) (vista del baseline de historial) |
+| Sistema de recomendación de vendedores | [`src/recomendador.py`](src/recomendador.py) · [`docs/recomendador.md`](docs/recomendador.md) · pestaña "Vendedores recomendados" de la app ([`app/pestana_vendedores.py`](app/pestana_vendedores.py)) |
 
 ## Estructura del repositorio
 
@@ -200,7 +200,6 @@ Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (I
 | `app/` | App de riesgo por pedido en Streamlit |
 | `api/` | API de predicción (FastAPI) |
 | `docs/` | Decisiones del equipo, métricas y aportes |
-| `prototipos/` | App que muestra el baseline de historial del recomendador, hasta que la reemplace la pestaña de la app |
 | `reports/` | Gráficos y resultados |
 | `models/` | Modelos entrenados, locales y excluidos de Git |
 | `Dockerfile` | Imagen de la API |

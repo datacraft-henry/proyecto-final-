@@ -115,6 +115,11 @@ Solo es una prueba honesta con pedidos del período de test (aprobados desde el 
 
 El detalle de cada campo, un ejemplo completo con `curl` y los 3 pedidos reales de la demo están en [`docs/api.md`](api.md).
 
-## 4. Prototipo: vendedores según riesgo de retraso
+## 4. Vendedores recomendados
 
-`prototipos/recomendador_vendedores.py` es una app aparte que ordena vendedores por su retraso histórico. **No es parte del producto.** Queda como prototipo hasta que el PO confirme el alcance. Cómo abrirla y por qué es un prototipo: [`docs/recomendador.md`](recomendador.md).
+En la app, la pestaña **Vendedores recomendados** responde a qué vendedor conviene comprarle: se elige la categoría del producto y el estado del cliente, y se ven los 3 vendedores que ya vendieron ahí con menor riesgo de retraso según el clasificador, con su precio mediano. La primera vez que se abre tarda cerca de un minuto.
+
+- **Se retrasan menos frente a lo que prometen, no entregan más rápido:** en parte recomienda a quien promete más días.
+- Debajo está cuánto ayuda en test frente a recomendar por historial, por popularidad o al azar. Frente al historial y a la popularidad, la diferencia no es significativa.
+
+Cómo recomienda y sus límites: [`docs/recomendador.md`](recomendador.md).

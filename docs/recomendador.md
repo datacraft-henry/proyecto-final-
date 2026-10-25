@@ -62,7 +62,7 @@ Con K = 3 (211 combinaciones, mediana de 11 candidatos):
 
 Con K = 5 (128 combinaciones, mediana de 17): Precision@5 de 73,4 % con el clasificador, contra 68,9 % historial, 68,1 % popularidad y 66,6 % azar; retraso de los mostrados de 2,46 % contra 2,78 %, 2,93 % y 3,13 %. Todo se reproduce con `python -m src.recomendador`. Las cifras del clasificador son las del equipo de referencia del proyecto: en otra máquina pueden variar en el último decimal, porque la regresión logística se optimiza por iteraciones y cada procesador redondea distinto.
 
-**Cómo leerlo:** el cliente que compra a los 3 recomendados vive un retraso de 2,6 % contra 3,1 % al azar, un riesgo relativo de 0,82. Los tres criterios superan al azar. El clasificador tiene el menor retraso, pero **no se distingue ni del historial ni de la popularidad**: frente al historial la diferencia es de −0,21 pp, con un IC 95 % de −0,58 a +0,14, y frente a la popularidad el intervalo también incluye el cero. Es un efecto real pero modesto, y es lo esperable: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor (ver "Límites").
+**Cómo leerlo:** el cliente que compra a los 3 recomendados vive un retraso de 2,6 % contra 3,1 % al azar, un riesgo relativo de 0,82. Los tres criterios superan al azar. El clasificador tiene el menor retraso, pero **no se distingue ni del historial ni de la popularidad**: frente al historial la diferencia es de −0,21 pp, con un IC 95 % de −0,58 a +0,14, y frente a la popularidad es de −0,17 pp, con un IC 95 % de −0,48 a +0,17. Es un efecto real pero modesto, y es lo esperable: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor (ver "Límites").
 
 **Con todo 2018 el historial también ordena.** Ordenando con 2017 y midiendo en 2018 (enero a agosto), el tercio de vendedores de menor riesgo histórico se retrasa 6,7 % y el de mayor 9,9 %, también dentro del mismo estado del cliente (6,7 % contra 9,8 %), y los de menor riesgo no son más caros (precio mediano de R$ 69,90 contra R$ 69,99; `tercios_despues_del_corte`). El clasificador no se compara en ese período porque ya vio esos meses al entrenar.
 
@@ -89,7 +89,7 @@ python -m src.recomendador                 # todas las cifras de este documento
 python -m pytest tests/test_recomendador.py
 ```
 
-La app de `prototipos/recomendador_vendedores.py` muestra el baseline de historial y queda hasta que la pestaña de recomendación de la app principal la reemplace.
+En la app principal (`streamlit run app/streamlit_app.py`), la pestaña "Vendedores recomendados" usa `recomendar` y muestra, para la categoría y el estado elegidos, los 3 vendedores de menor riesgo predicho, todos los candidatos y la tabla de Precision@3, Recall@3 y retraso de los mostrados frente a historial, popularidad y azar. La primera vez tarda cerca de un minuto, porque el clasificador puntúa todos los pedidos.
 
 ## Qué datos necesitaríamos de Olist
 
