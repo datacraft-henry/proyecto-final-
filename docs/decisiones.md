@@ -125,7 +125,7 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 
 ## 12. Sistema de recomendación: vendedores ordenados por el clasificador
 
-- **Estado:** Acordada en el grupo el 25/10/2026 (Camila, Cristian y Alexis). Se ratifica con la aprobación del PR.
+- **Estado:** Propuesta del equipo. La decide Nelson, el PO, en la Demo 2 del 28/10.
 - **Decisión:** el recomendador de vendedores deja de ser un prototipo y pasa a ser el sistema de recomendación del proyecto. Ordena a los vendedores por el riesgo medio que el clasificador calibrado (punto 9 y 10) predice para sus pedidos, sin reentrenarlo. La tasa histórica suavizada y la popularidad quedan como baselines.
 - **Por qué contextual:** el 96,9 % de los clientes compra una sola vez, así que no hay historial por cliente para un filtrado colaborativo. Se recomienda según la categoría que busca el cliente y su estado de destino.
 - **Evaluación:** en el período de test del clasificador (27/05 al 29/08/2018), con Precision@K, Recall@K y el retraso de los vendedores mostrados. Con K = 3, el retraso de los recomendados es 2,57 %, contra 2,79 % historial, 2,75 % popularidad y 3,14 % azar. La ventaja sobre el historial no es significativa y se dice así.
