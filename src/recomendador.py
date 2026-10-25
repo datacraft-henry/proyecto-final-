@@ -9,7 +9,8 @@ Uso:
     from src.recomendador import preparar
     candidatos, tercios, resumen = preparar(tablas)
 
-La app está en prototipos/recomendador_vendedores.py. Es una asociación observacional:
+La pestaña "Vendedores recomendados" de la app (app/pestana_vendedores.py) usa
+preparar_clasificador, puntaje_vendedores y recomendar. Es una asociación observacional:
 no prueba que recomendar a un vendedor reduzca el retraso.
 """
 

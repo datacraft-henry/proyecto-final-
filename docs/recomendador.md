@@ -89,7 +89,7 @@ python -m src.recomendador                 # todas las cifras de este documento
 python -m pytest tests/test_recomendador.py
 ```
 
-La app de `prototipos/recomendador_vendedores.py` muestra el baseline de historial y queda hasta que la pestaña de recomendación de la app principal la reemplace.
+En la app principal (`streamlit run app/streamlit_app.py`), la pestaña "Vendedores recomendados" usa `recomendar` y muestra, para la categoría y el estado elegidos, los 3 vendedores de menor riesgo predicho, todos los candidatos y la tabla de Precision@3, Recall@3 y retraso de los mostrados frente a historial, popularidad y azar. La primera vez tarda cerca de un minuto, porque el clasificador puntúa todos los pedidos.
 
 ## Qué datos necesitaríamos de Olist
 

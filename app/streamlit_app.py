@@ -9,8 +9,14 @@ que el modelo no vio). Cuando esté la API, la app le va a pedir el riesgo a la
 API en lugar de cargar el modelo.
 
 La lógica de negocio vive en app/riesgo.py, los helpers de pantalla en
-app/vista.py y las paletas y el CSS en app/estilos.py: este archivo compone la
-pantalla. El modo claro u oscuro vive en `st.session_state.theme_mode`.
+app/vista.py (pedidos) y app/vendedores.py (vendedores recomendados) y las
+paletas y el CSS en app/estilos.py: este archivo compone la pantalla. El modo
+claro u oscuro vive en `st.session_state.theme_mode`.
+
+Tiene dos pestañas: los pedidos a revisar (operaciones, en este archivo) y los
+vendedores recomendados según el riesgo que predice el clasificador
+(src/recomendador.py, compuesta en app/pestana_vendedores.py). Solo corre la
+pestaña abierta.
 """
 
 import json
@@ -33,6 +39,7 @@ from app.riesgo import (  # noqa: E402
     risk_factors,
     summary_by_level,
 )
+from app.pestana_vendedores import show_sellers_page  # noqa: E402
 from app.vista import (  # noqa: E402
     LEVEL_ALL,
     ROW_HEIGHT,
@@ -67,6 +74,7 @@ CHART_STEP, CHART_BAR = 40, 28  # alto de cada fila del gráfico y de la barra d
 HINT_DEFAULT = "Viendo el pedido más riesgoso de la lista (seleccioná otra fila para inspeccionar)"
 COPY_LABEL, COPIED_LABEL = "📋 Copiar ID del pedido", "✅ ¡ID copiado!"
 DEFAULT_THEME = "light"
+TAB_ORDERS, TAB_SELLERS = "🚚 Pedidos a revisar", "🏪 Vendedores recomendados"
 # Qué ofrece el botón de la cabecera en cada modo: el modo al que se pasa.
 THEME_SWITCH = {"light": ("🌙 Oscuro", "Cambiar a modo oscuro"), "dark": ("☀️ Claro", "Cambiar a modo claro")}
 
@@ -562,10 +570,8 @@ def show_help() -> None:
         )
 
 
-def main() -> None:
-    st.set_page_config(page_title="Riesgo de retraso · DataCraft", page_icon="🚚", layout="wide")
-    apply_theme()
-    show_header()
+def show_orders_page() -> None:
+    """Pestaña de operaciones: pedidos del período con su nivel de riesgo y el inspector."""
     try:
         orders, scored = get_orders(), get_scored_orders()
     except FileNotFoundError as error:
@@ -592,6 +598,20 @@ def main() -> None:
     show_help()
     trained_with = get_artifact()["entrenado_con"].replace("validacion", "validación")
     st.caption(f"Modelo: regresión logística calibrada, entrenada con {trained_with}.")
+
+
+def main() -> None:
+    st.set_page_config(page_title="Riesgo de retraso · DataCraft", page_icon="🚚", layout="wide")
+    apply_theme()
+    show_header()
+    # Con on_change="rerun" cada pestaña sabe si está abierta: solo se arma la que se ve.
+    orders_tab, sellers_tab = st.tabs([TAB_ORDERS, TAB_SELLERS], key="dc-tabs", on_change="rerun")
+    if orders_tab.open:
+        with orders_tab:
+            show_orders_page()
+    if sellers_tab.open:
+        with sellers_tab:
+            show_sellers_page(palette(), get_artifact())
 
 
 main()
