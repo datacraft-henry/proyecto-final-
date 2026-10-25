@@ -13,19 +13,20 @@ from app.vendedores import (
     TOP_K,
     categorias,
     combinaciones,
+    de_cada_100,
     es_significativa,
     estados_de,
     nombre_categoria,
     nombre_estado,
+    resumen_negocio,
     resumen_top,
     tabla_metricas,
     tabla_vendedores,
     texto_diferencia,
-    texto_pct,
     texto_reales,
     texto_vendedores,
 )
-from app.vista import ROW_HEIGHT, format_int, table_height
+from app.vista import ROW_HEIGHT, format_int, format_pct, table_height
 from src.data_loading import RAW_DIR, load_raw_tables
 from src.feature_engineering import load_geolocation
 from src.recomendador import (
@@ -72,6 +73,7 @@ def get_recommender(_artifact: dict) -> dict:
         "vs_popularity": ic_diferencia(evaluation, "clasificador", "popularidad"),
         "seller_state": tables["sellers"].set_index("seller_id")["seller_state"],
         "names": names,
+        "cuts": _artifact["cuts"],
     }
 
 
@@ -95,16 +97,14 @@ def show_sellers_page(p: dict, artifact: dict) -> None:
     listed = recomendar(rec["orders"], rec["sellers"], cut, category, state, k=len(rec["sellers"]))
     show_sellers_cards(listed, p)
     st.markdown(f"### Los {TOP_K} de menor riesgo")
-    # La misma escala en las dos tablas: la barra de los recomendados se compara con la de todos.
-    risk_max = 100 * float(listed["riesgo_predicho"].max()) if "riesgo_predicho" in listed else 100.0
-    show_sellers_table(listed.head(TOP_K), state, rec["seller_state"], risk_max)
+    show_sellers_table(listed.head(TOP_K), state, rec["seller_state"], rec["cuts"])
     st.info(
         "**Se retrasan menos frente a lo que prometen, no entregan más rápido.** En parte el recomendador "
         "elige a quien promete más días: en test, los recomendados prometían unos 2 días más que los candidatos en general.",
         icon=":material/schedule:",
     )
     with st.expander(f"Ver los {texto_vendedores(len(listed))} para elegir"):
-        show_sellers_table(listed, state, rec["seller_state"], risk_max)
+        show_sellers_table(listed, state, rec["seller_state"], rec["cuts"])
     show_evaluation(rec)
     show_sellers_help(cut)
 
@@ -138,9 +138,9 @@ def show_sellers_cards(listed: pd.DataFrame, p: dict) -> None:
         (p["text"], "Vendedores para elegir", format_int(top["candidatos"]), f"⭐ Se recomiendan los {top['top']} de menor riesgo."),
         (
             p["level"]["bajo"],
-            "Riesgo predicho de los recomendados",
-            texto_pct(top["riesgo_top"]),
-            f"Promedio de todos: {texto_pct(top['riesgo_todos'])}.",
+            "Pedidos que se espera que lleguen tarde",
+            de_cada_100(top["riesgo_top"]),
+            f"Con los recomendados. Con todos: {de_cada_100(top['riesgo_todos'])}.",
         ),
         (
             p["accent"],
@@ -157,8 +157,8 @@ def show_sellers_cards(listed: pd.DataFrame, p: dict) -> None:
         )
 
 
-def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series, risk_max: float) -> None:
-    view = tabla_vendedores(listed, state, seller_state)
+def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series, cuts: dict) -> None:
+    view = tabla_vendedores(listed, state, seller_state, cuts)
     st.dataframe(
         view,
         hide_index=True,
@@ -169,11 +169,11 @@ def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series
             "#": st.column_config.NumberColumn(width=40),
             "": st.column_config.TextColumn(width=36),
             "Vendedor": st.column_config.TextColumn(width=96, help="Primeros 8 caracteres del código del vendedor"),
-            "Riesgo predicho": st.column_config.ProgressColumn(
-                format="%.1f %%",
-                min_value=0,
-                max_value=max(1.0, risk_max),
-                help="Riesgo de retraso medio que el clasificador predice para sus pedidos. Ordena la lista: menor, primero.",
+            "Riesgo": st.column_config.TextColumn(
+                width=90, help="Con los mismos cortes que los pedidos a revisar. La lista va del menor al mayor riesgo."
+            ),
+            "Llegan tarde": st.column_config.TextColumn(
+                help="De cada 100 pedidos suyos, cuántos espera el modelo que lleguen después de la fecha prometida."
             ),
             "Ventas aquí": st.column_config.NumberColumn(help="Pedidos de esta categoría a este estado."),
             "Precio mediano": st.column_config.NumberColumn(format="R$ %.2f", help="De sus ventas aquí."),
@@ -183,25 +183,36 @@ def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series
 
 
 def show_evaluation(rec: dict) -> None:
-    """Precision@K, Recall@K y retraso de los mostrados en test, frente a historial, popularidad y azar."""
+    """Cuánto ayuda en una frase de negocio; Precision@K, Recall@K e IC en un desplegable."""
     st.markdown("### ¿Cuánto ayuda recomendar así?")
-    st.markdown(
-        f'<p class="dc-muted">Medido en el período de test (desde el {rec["cut"]:%d/%m/%Y}), que el clasificador '
-        f"no vio: en {format_int(rec['n_combos'])} combinaciones de categoría y estado se mostraron {TOP_K} "
-        "vendedores con cada criterio. Un vendedor es bueno si en test se retrasó menos que la media.</p>",
-        unsafe_allow_html=True,
-    )
-    st.dataframe(tabla_metricas(rec["metrics"]), width="stretch")
-    lines = [f"- **Frente al azar**, el retraso de los mostrados cambia {texto_diferencia(rec['vs_random'])}."]
-    for name, key in (("historial", "vs_history"), ("popularidad", "vs_popularity")):
-        ic = rec[key]
-        verdict = (
-            "La diferencia es significativa."
-            if es_significativa(ic)
-            else f"La diferencia no es significativa: no se distingue de recomendar por {name}."
+    business = resumen_negocio(rec["metrics"])
+    if business and business["uno_de_cada"]:
+        st.markdown(
+            f'<p class="dc-lead">Comprándole a los {TOP_K} recomendados, los pedidos llegaron tarde '
+            f'<b>{format_pct(business["recomendados"])}</b> de las veces, contra '
+            f'<b>{format_pct(business["azar"])}</b> eligiendo un vendedor al azar: '
+            f'<b>1 de cada {business["uno_de_cada"]} retrasos menos</b>.</p>'
+            '<p class="dc-muted">Elegir por el historial del vendedor o por los que más venden da un resultado '
+            "parecido: la ventaja del modelo sobre esas reglas simples es chica.</p>",
+            unsafe_allow_html=True,
         )
-        lines.append(f"- **Frente a la {name}**, cambia {texto_diferencia(ic)}. {verdict}")
-    st.markdown("\n".join(lines))
+    with st.expander("Detalle técnico"):
+        st.markdown(
+            f"Medido en el período de test (desde el {rec['cut']:%d/%m/%Y}), que el clasificador no vio: en "
+            f"{format_int(rec['n_combos'])} combinaciones de categoría y estado se mostraron {TOP_K} vendedores "
+            "con cada criterio. Un vendedor es bueno si en test se retrasó menos que la media."
+        )
+        st.dataframe(tabla_metricas(rec["metrics"]), width="stretch")
+        lines = [f"- **Frente al azar**, el retraso de los mostrados cambia {texto_diferencia(rec['vs_random'])}."]
+        for name, key in (("historial", "vs_history"), ("popularidad", "vs_popularity")):
+            ic = rec[key]
+            verdict = (
+                "La diferencia es significativa."
+                if es_significativa(ic)
+                else f"La diferencia no es significativa: no se distingue de recomendar por {name}."
+            )
+            lines.append(f"- **Frente a la {name}**, cambia {texto_diferencia(ic)}. {verdict}")
+        st.markdown("\n".join(lines))
 
 
 def show_sellers_help(cut: pd.Timestamp) -> None:

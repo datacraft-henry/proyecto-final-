@@ -122,6 +122,8 @@ h1, h2, h3, .dc-serif {{ font-family: Georgia, 'Times New Roman', serif; letter-
 .dc-hero {{ font-family: Georgia, serif; font-size: 1.45rem; line-height: 1.35; color: {p["text"]}; margin: 4px 0 2px; }}
 .dc-hero b {{ color: {p["accent_text"]}; }}
 .dc-muted {{ color: {p["muted"]}; font-size: 0.9rem; }}
+.dc-lead {{ font-size: 1.1rem; line-height: 1.5; color: {p["text"]}; margin: 0 0 4px; }}
+.dc-lead b {{ color: {p["accent_text"]}; }}
 
 /* Pestañas: pedidos a revisar y vendedores recomendados */
 .st-key-dc-tabs [data-baseweb="tab"] p {{ font-size: 1rem; font-weight: 600; color: {p["muted"]}; }}

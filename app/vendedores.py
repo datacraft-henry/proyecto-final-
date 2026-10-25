@@ -7,7 +7,9 @@ llega y no vuelve a ordenarla. Las columnas que el recomendador no devuelva no s
 
 import pandas as pd
 
+from app.riesgo import SEMAFORO
 from app.vista import format_int, format_pct
+from src.calibration import assign_risk_level
 
 TOP_K = 3  # vendedores recomendados por pantalla
 MIN_CANDIDATOS = TOP_K + 1  # con K o menos candidatos se mostrarían todos: no hay nada que elegir
@@ -30,7 +32,6 @@ CRITERIOS = {
 }
 
 COLUMNAS = {
-    "riesgo_predicho": "Riesgo predicho",
     "ventas_aqui": "Ventas aquí",
     "precio_mediano": "Precio mediano",
     "pedidos_hist": "Pedidos (historial)",
@@ -67,12 +68,26 @@ def estados_de(combos: pd.DataFrame, categoria: str) -> list[str]:
     return sorted(siglas, key=lambda s: ESTADOS.get(s, s))
 
 
+def de_cada_100(prob: float | None) -> str:
+    """0.074 -> '7 de cada 100': cuántos de cada 100 pedidos se espera que lleguen tarde."""
+    if prob is None or pd.isna(prob):
+        return "—"
+    n = round(prob * 100)
+    return "menos de 1 de cada 100" if n < 1 else f"{n} de cada 100"
+
+
+def nivel_riesgo(probs, cortes: dict) -> list[str]:
+    """Semáforo y nivel con los mismos cortes que los pedidos ('🟢 Bajo', '🟡 Medio', '🔴 Alto')."""
+    return [f"{SEMAFORO[n]} {n.capitalize()}" for n in assign_risk_level(probs, cortes)]
+
+
 def tabla_vendedores(
-    lista: pd.DataFrame, estado: str, estado_vendedor: pd.Series, top_k: int = TOP_K
+    lista: pd.DataFrame, estado: str, estado_vendedor: pd.Series, cortes: dict | None = None, top_k: int = TOP_K
 ) -> pd.DataFrame:
     """Tabla para pantalla, en el orden del recomendador (`lista` indexada por seller_id).
 
-    Marca los primeros `top_k` y deja los porcentajes de 0 a 100 para las columnas de Streamlit.
+    Marca los primeros `top_k` y muestra el riesgo como "X de cada 100" pedidos tarde, con su
+    nivel si se pasan los `cortes` del modelo.
     """
     origen = lista.index.map(estado_vendedor)
     vista = pd.DataFrame(
@@ -85,10 +100,14 @@ def tabla_vendedores(
             ],
         }
     )
+    if "riesgo_predicho" in lista.columns:
+        riesgo = lista["riesgo_predicho"].to_numpy()
+        if cortes:
+            vista["Riesgo"] = nivel_riesgo(riesgo, cortes)
+        vista["Llegan tarde"] = [de_cada_100(r) for r in riesgo]
     for columna, titulo in COLUMNAS.items():
         if columna in lista.columns:
-            valores = lista[columna].to_numpy()
-            vista[titulo] = valores * 100 if columna == "riesgo_predicho" else valores
+            vista[titulo] = lista[columna].to_numpy()
     return vista
 
 
@@ -126,6 +145,23 @@ def tabla_metricas(resumen: pd.DataFrame, k: int = TOP_K) -> pd.DataFrame:
     return vista
 
 
+def resumen_negocio(resumen: pd.DataFrame) -> dict | None:
+    """Retraso de los recomendados contra elegir al azar, y cuántos retrasos se evitan.
+
+    {'recomendados': 0.0258, 'azar': 0.0314, 'menos': 0.18, 'uno_de_cada': 6}, o None si falta un criterio.
+    """
+    if "retraso" not in resumen.columns or not {"clasificador", "azar"} <= set(resumen.index):
+        return None
+    recomendados, azar = float(resumen.loc["clasificador", "retraso"]), float(resumen.loc["azar", "retraso"])
+    menos = 1 - recomendados / azar if azar > 0 else 0.0
+    return {
+        "recomendados": recomendados,
+        "azar": azar,
+        "menos": menos,
+        "uno_de_cada": round(1 / menos) if menos > 0 else None,
+    }
+
+
 def es_significativa(ic: tuple[float, float, float]) -> bool:
     """El intervalo de confianza de la diferencia no incluye el cero."""
     _, bajo, alto = ic
@@ -140,10 +176,6 @@ def texto_diferencia(ic: tuple[float, float, float]) -> str:
 
     media, bajo, alto = ic
     return f"{pp(media)} puntos (IC 95 %: {pp(bajo)} a {pp(alto)})"
-
-
-def texto_pct(valor: float | None) -> str:
-    return "—" if valor is None else format_pct(valor)
 
 
 def texto_reales(valor: float | None) -> str:

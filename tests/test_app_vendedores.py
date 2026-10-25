@@ -5,10 +5,13 @@ from app.vendedores import (
     MIN_CANDIDATOS,
     categorias,
     combinaciones,
+    de_cada_100,
     es_significativa,
     estados_de,
     nombre_categoria,
     nombre_estado,
+    nivel_riesgo,
+    resumen_negocio,
     resumen_top,
     tabla_metricas,
     tabla_vendedores,
@@ -16,6 +19,9 @@ from app.vendedores import (
     texto_reales,
     texto_vendedores,
 )
+
+
+CORTES = {"alto": 0.20, "medio": 0.05}
 
 
 @pytest.fixture
@@ -72,11 +78,12 @@ def test_la_tabla_respeta_el_orden_del_recomendador(lista, estado_vendedor):
     assert list(tabla[""]) == ["⭐", "⭐", "", ""]
 
 
-def test_la_tabla_marca_los_primeros_y_pasa_el_riesgo_a_0_100(lista, estado_vendedor):
-    tabla = tabla_vendedores(lista, "RJ", estado_vendedor, top_k=3)
+def test_la_tabla_marca_los_primeros_y_muestra_el_riesgo_en_palabras(lista, estado_vendedor):
+    tabla = tabla_vendedores(lista, "RJ", estado_vendedor, CORTES, top_k=3)
     assert list(tabla["#"]) == [1, 2, 3, 4]
     assert list(tabla[""]) == ["⭐", "⭐", "⭐", ""]
-    assert tabla["Riesgo predicho"].tolist() == pytest.approx([3.0, 4.0, 5.0, 9.0])
+    assert list(tabla["Llegan tarde"]) == ["3 de cada 100", "4 de cada 100", "5 de cada 100", "9 de cada 100"]
+    assert list(tabla["Riesgo"]) == ["🟢 Bajo", "🟢 Bajo", "🟡 Medio", "🟡 Medio"]
     assert list(tabla["Desde"]) == ["São Paulo", "Rio de Janeiro (local)", "Minas Gerais", "—"]
     assert list(tabla["Ventas aquí"]) == [11, 14, 48, 9]
 
@@ -84,7 +91,8 @@ def test_la_tabla_marca_los_primeros_y_pasa_el_riesgo_a_0_100(lista, estado_vend
 def test_la_tabla_omite_las_columnas_que_el_recomendador_no_devuelve(lista, estado_vendedor):
     tabla = tabla_vendedores(lista.drop(columns=["pedidos_hist", "precio_mediano"]), "RJ", estado_vendedor)
     assert "Pedidos (historial)" not in tabla.columns and "Precio mediano" not in tabla.columns
-    assert {"Riesgo predicho", "Ventas aquí"} <= set(tabla.columns)
+    assert {"Llegan tarde", "Ventas aquí"} <= set(tabla.columns)
+    assert "Riesgo" not in tabla.columns  # sin cortes no hay nivel
 
 
 def test_el_resumen_compara_a_los_recomendados_con_todos(lista):
@@ -125,3 +133,18 @@ def test_formatos():
     assert texto_reales(1234.5) == "R$ 1.234,50"
     assert texto_reales(None) == "—"
     assert texto_vendedores(1) == "1 vendedor" and texto_vendedores(1500) == "1.500 vendedores"
+
+
+def test_riesgo_en_palabras_y_nivel():
+    assert de_cada_100(0.074) == "7 de cada 100"
+    assert de_cada_100(0.003) == "menos de 1 de cada 100"
+    assert de_cada_100(None) == "—"
+    assert nivel_riesgo([0.01, 0.05, 0.25], CORTES) == ["🟢 Bajo", "🟡 Medio", "🔴 Alto"]
+
+
+def test_resumen_de_negocio_frente_al_azar():
+    resumen = pd.DataFrame({"retraso": [0.0258, 0.0314]}, index=["clasificador", "azar"])
+    r = resumen_negocio(resumen)
+    assert r["menos"] == pytest.approx(0.178, abs=1e-3)
+    assert r["uno_de_cada"] == 6
+    assert resumen_negocio(resumen.drop(index="azar")) is None
