@@ -155,12 +155,12 @@ Recomienda 3 vendedores por categoría y estado del cliente, ordenados por el ri
 
 | Criterio | Precision@3 | Recall@3 | Retraso de los recomendados |
 |---|---|---|---|
-| **Clasificador (recomendador)** | **71,2 %** | **28,3 %** | **2,57 %** |
+| **Clasificador (recomendador)** | **71,1 %** | **28,0 %** | **2,58 %** |
 | Historial del vendedor | 69,8 % | 28,4 % | 2,79 % |
 | Popularidad (baseline) | 69,4 % | 27,7 % | 2,75 % |
 | Azar | 66,1 % | 27,0 % | 3,14 % |
 
-Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (IC 95 % de la diferencia: −0,85 a −0,31 pp). El efecto es modesto y no se distingue del historial: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor. Fuente: `docs/recomendador.md`.
+Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (IC 95 % de la diferencia: −0,84 a −0,29 pp). El efecto es modesto y no se distingue del historial: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor. Fuente: `docs/recomendador.md`.
 
 ## Dónde está cada entregable
 
