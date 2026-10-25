@@ -123,6 +123,10 @@ h1, h2, h3, .dc-serif {{ font-family: Georgia, 'Times New Roman', serif; letter-
 .dc-hero b {{ color: {p["accent_text"]}; }}
 .dc-muted {{ color: {p["muted"]}; font-size: 0.9rem; }}
 
+/* Pestañas: pedidos a revisar y vendedores recomendados */
+.st-key-dc-tabs [data-baseweb="tab"] p {{ font-size: 1rem; font-weight: 600; color: {p["muted"]}; }}
+.st-key-dc-tabs [data-baseweb="tab"][aria-selected="true"] p {{ color: {p["text"]}; }}
+
 /* Barras de control: filtros globales arriba, segmento + descarga sobre la tabla */
 .st-key-dc-toolbar, .st-key-dc-tablebar {{ background: {p["surface_alt"]}; border: 1px solid {p["line"]};
   border-radius: 14px; padding: 12px 18px 14px; box-shadow: {p["shadow_soft"]}; }}
