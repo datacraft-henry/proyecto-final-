@@ -1,11 +1,15 @@
 """Pestaña de vendedores recomendados de la app (app/streamlit_app.py).
 
-Compone la pantalla con src/recomendador.py: para la categoría y el estado del cliente,
-los vendedores que ya vendieron ahí, en el orden de `recomendar`, y cómo rinde el
-recomendador en test frente a historial, popularidad y azar. Los helpers sin Streamlit
-están en app/vendedores.py.
+Compone la pantalla con src/recomendador.py para el responsable del marketplace: para una
+categoría y un destino, los vendedores que ya vendieron ahí, en el orden de `recomendar`,
+qué tener en cuenta antes de elegir y qué encontramos al evaluar las recomendaciones con
+pedidos históricos. Las cifras técnicas quedan en un desplegable para el jurado. Los
+helpers sin Streamlit están en app/vendedores.py.
 """
 
+from html import escape
+
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -13,20 +17,21 @@ from app.vendedores import (
     TOP_K,
     categorias,
     combinaciones,
-    de_cada_100,
+    comparacion_criterios,
     es_significativa,
     estados_de,
+    nivel_riesgo,
     nombre_categoria,
     nombre_estado,
-    resumen_negocio,
-    resumen_top,
+    origen,
+    puntaje,
     tabla_metricas,
     tabla_vendedores,
     texto_diferencia,
     texto_reales,
     texto_vendedores,
 )
-from app.vista import ROW_HEIGHT, format_int, format_pct, table_height
+from app.vista import ROW_HEIGHT, SCORE_SCALE, format_int, format_pct, table_height
 from src.data_loading import RAW_DIR, load_raw_tables
 from src.feature_engineering import load_geolocation
 from src.recomendador import (
@@ -38,9 +43,11 @@ from src.recomendador import (
     puntaje_vendedores,
     recomendar,
     resumen_evaluacion,
+    retraso_que_empieza_en_el_vendedor,
 )
 
 DEFAULT_CATEGORY, DEFAULT_STATE = "cama_mesa_banho", "RJ"  # la categoría que más se vende y un estado con varios vendedores
+CHART_ROW = 34  # alto de cada barra del gráfico de la evaluación, en píxeles
 
 
 @st.cache_resource(show_spinner="Calculando el riesgo de los vendedores (la primera vez tarda cerca de un minuto)...")
@@ -48,8 +55,8 @@ def get_recommender(_artifact: dict) -> dict:
     """Lo que usa la pestaña de vendedores, calculado una vez con src.recomendador.
 
     Pedidos con el riesgo del clasificador, vendedores con puntaje, el corte (inicio del test),
-    las combinaciones que se pueden elegir y la evaluación en test frente a los baselines.
-    El artefacto no se hashea (guion bajo): es el mismo modelo en toda la sesión.
+    las combinaciones que se pueden elegir, la evaluación en test frente a los baselines y el
+    diagnóstico de despacho. El artefacto no se hashea (guion bajo): es el mismo modelo en toda la sesión.
     """
     tables = {**load_raw_tables(), "geolocation": load_geolocation()}
     orders, cut = preparar_clasificador(tables, _artifact)
@@ -65,12 +72,14 @@ def get_recommender(_artifact: dict) -> dict:
         "orders": orders,
         "sellers": sellers,
         "cut": cut,
+        "test_end": pd.to_datetime(orders[FECHA_PREDICCION]).max(),
         "combos": combinaciones(history),
         "metrics": resumen_evaluacion(evaluation),
         "n_combos": len(evaluation),
         "vs_random": ic_diferencia(evaluation, "clasificador", "azar"),
         "vs_history": ic_diferencia(evaluation, "clasificador", "historial"),
         "vs_popularity": ic_diferencia(evaluation, "clasificador", "popularidad"),
+        "dispatch": retraso_que_empieza_en_el_vendedor(tables),
         "seller_state": tables["sellers"].set_index("seller_id")["seller_state"],
         "names": names,
         "cuts": _artifact["cuts"],
@@ -78,7 +87,7 @@ def get_recommender(_artifact: dict) -> dict:
 
 
 def show_sellers_page(p: dict, artifact: dict) -> None:
-    """Pestaña del recomendador: para una categoría y el estado del cliente, los vendedores de menor riesgo."""
+    """Pestaña del recomendador: para una categoría y un destino, los vendedores a considerar."""
     try:
         rec = get_recommender(artifact)
     except FileNotFoundError as error:
@@ -87,33 +96,40 @@ def show_sellers_page(p: dict, artifact: dict) -> None:
     cut = rec["cut"]
 
     st.markdown(
-        '<p class="dc-hero">¿A qué vendedor conviene comprarle?</p>'
-        '<p class="dc-muted">Para la categoría que busca el cliente y su estado, los vendedores que ya vendieron ahí, '
-        "ordenados por el riesgo de retraso que el clasificador predice para sus pedidos. "
-        f"Usa solo pedidos aprobados antes del {cut:%d/%m/%Y}.</p>",
+        '<p class="dc-hero">Vendedores a considerar para esta categoría y destino</p>'
+        '<p class="dc-muted">Ayuda a decidir a qué vendedores mirar primero cuando un cliente busca un producto. '
+        f"Es una demostración con pedidos históricos de Olist aprobados antes del {cut:%d/%m/%Y}: "
+        "no reemplaza confirmar con el vendedor el producto, el stock, el precio y el plazo.</p>",
         unsafe_allow_html=True,
     )
     category, state = show_sellers_toolbar(rec["combos"], rec["names"])
     listed = recomendar(rec["orders"], rec["sellers"], cut, category, state, k=len(rec["sellers"]))
-    show_sellers_cards(listed, p)
-    st.markdown(f"### Los {TOP_K} de menor riesgo")
-    show_sellers_table(listed.head(TOP_K), state, rec["seller_state"], rec["cuts"])
-    st.info(
-        "**Se retrasan menos frente a lo que prometen, no entregan más rápido.** En parte el recomendador "
-        "elige a quien promete más días: en test, los recomendados prometían unos 2 días más que los candidatos en general.",
-        icon=":material/schedule:",
+    st.markdown(
+        f'<p class="dc-lead"><b>{texto_vendedores(len(listed))}</b> con historial ya vendieron '
+        f"{escape(nombre_categoria(category, rec['names']))} con destino {escape(nombre_estado(state))}. "
+        f"Estos son los {TOP_K} de menor puntaje de riesgo.</p>",
+        unsafe_allow_html=True,
     )
-    with st.expander(f"Ver los {texto_vendedores(len(listed))} para elegir"):
+    st.markdown(
+        '<div class="dc-note"><b>Cómo se ordena.</b> La categoría y el destino definen quién aparece: '
+        "los vendedores que ya vendieron ahí. El orden usa el puntaje de riesgo medio que el modelo dio a "
+        "<i>todos</i> los pedidos anteriores de cada vendedor, en cualquier categoría y destino. "
+        "No es una predicción para esta ruta ni para este producto.</div>",
+        unsafe_allow_html=True,
+    )
+    show_seller_cards(listed.head(TOP_K), state, rec, p)
+    show_before_choosing(cut)
+    with st.expander(f"Comparar los {texto_vendedores(len(listed))}"):
         show_sellers_table(listed, state, rec["seller_state"], rec["cuts"])
-    show_evaluation(rec)
-    show_sellers_help(cut)
+    show_evaluation(rec, p)
+    show_technical(rec)
 
 
 def show_sellers_toolbar(combos: pd.DataFrame, names: dict) -> tuple[str, str]:
-    """Categoría y estado del cliente; solo combinaciones con más vendedores que los que se recomiendan."""
+    """Categoría y destino; solo combinaciones con más vendedores que los que se destacan."""
     category_options = sorted(categorias(combos), key=lambda c: nombre_categoria(c, names))
     with st.container(key="dc-toolbar"):
-        st.markdown('<div class="dc-toolbar-title">Compra</div>', unsafe_allow_html=True)
+        st.markdown('<div class="dc-toolbar-title">Búsqueda</div>', unsafe_allow_html=True)
         left, right = st.columns(2, vertical_alignment="bottom")
         category = left.selectbox(
             "Categoría del producto",
@@ -123,7 +139,7 @@ def show_sellers_toolbar(combos: pd.DataFrame, names: dict) -> tuple[str, str]:
         )
         states = estados_de(combos, category)
         state = right.selectbox(
-            "Estado del cliente",
+            "Destino (estado del cliente)",
             states,
             index=states.index(DEFAULT_STATE) if DEFAULT_STATE in states else 0,
             format_func=nombre_estado,
@@ -131,30 +147,47 @@ def show_sellers_toolbar(combos: pd.DataFrame, names: dict) -> tuple[str, str]:
     return category, state
 
 
-def show_sellers_cards(listed: pd.DataFrame, p: dict) -> None:
-    """Cuántos vendedores hay para elegir y cómo son los recomendados frente a todos."""
-    top = resumen_top(listed)
-    cards = [
-        (p["text"], "Vendedores para elegir", format_int(top["candidatos"]), f"⭐ Se recomiendan los {top['top']} de menor riesgo."),
-        (
-            p["level"]["bajo"],
-            "Pedidos que se espera que lleguen tarde",
-            de_cada_100(top["riesgo_top"]),
-            f"Con los recomendados. Con todos: {de_cada_100(top['riesgo_todos'])}.",
-        ),
-        (
-            p["accent"],
-            "Precio mediano de los recomendados",
-            texto_reales(top["precio_top"]),
-            f"De todos: {texto_reales(top['precio_todos'])}.",
-        ),
-    ]
-    for column, (color, title, number, note) in zip(st.columns(len(cards)), cards):
+def show_seller_cards(top: pd.DataFrame, state: str, rec: dict, p: dict) -> None:
+    """Una tarjeta por vendedor destacado: posición, nivel, origen, ventas y precio histórico."""
+    levels = nivel_riesgo(top["riesgo_predicho"], rec["cuts"]) if "riesgo_predicho" in top else [""] * len(top)
+    for column, (position, (seller, row)), level in zip(st.columns(TOP_K), enumerate(top.iterrows(), 1), levels):
+        level_key = level.split(" ")[-1].lower() if level else "bajo"
+        facts = [
+            ("Origen", origen(rec["seller_state"].get(seller), state)),
+            ("Ventas en este contexto", format_int(row["ventas_aqui"]) if "ventas_aqui" in row else "—"),
+            ("Precio histórico de referencia", texto_reales(row.get("precio_mediano"))),
+            ("Pedidos anteriores", format_int(row["pedidos_hist"]) if "pedidos_hist" in row else "—"),
+        ]
+        score = puntaje(row.get("riesgo_predicho"))
         column.markdown(
-            f'<div class="dc-card" style="--lvl:{color}">'
-            f'<div class="t">{title}</div><div class="n">{number}</div><div class="p">{note}</div></div>',
+            f'<div class="dc-seller" style="--lvl:{p["level"][level_key]};--soft:{p["level_soft"][level_key]};'
+            f'--ink:{p["level_text"][level_key]}">'
+            f'<div class="dc-seller-top"><span class="dc-rank">⭐ {position}.º</span>'
+            f'<span class="dc-badge">{level}</span></div>'
+            f'<div class="dc-seller-id" title="Código completo del vendedor">{escape(str(seller))}</div>'
+            f'<div class="dc-score">Puntaje de riesgo <b>{score if score is not None else "—"}</b>/{SCORE_SCALE}</div>'
+            '<div class="dc-facts">'
+            + "".join(f"<div><small>{label}</small><b>{escape(str(value))}</b></div>" for label, value in facts)
+            + "</div></div>",
             unsafe_allow_html=True,
         )
+    st.caption(
+        "Puntaje de riesgo: de 0 a 100, sirve para ordenar; no es la probabilidad de que un pedido llegue tarde. "
+        "Precio histórico de referencia: la mediana de lo que cada vendedor cobró en sus ventas de esta categoría "
+        "a este destino, en cualquier producto. No es el precio actual ni del mismo producto."
+    )
+
+
+def show_before_choosing(cut: pd.Timestamp) -> None:
+    st.markdown("#### Qué tener en cuenta antes de elegir")
+    st.markdown(
+        "- **Cumplir la fecha prometida no es entregar más rápido.** En la evaluación, los vendedores destacados "
+        "prometían en promedio unos 2 días más que el resto: en parte se los elige por prometer plazos más largos.\n"
+        f"- **Solo aparecen vendedores con historial:** al menos {MIN_PEDIDOS} pedidos antes del {cut:%d/%m/%Y}. "
+        "Los vendedores nuevos no se pueden evaluar.\n"
+        "- **Confirmá producto, stock, precio y plazo con el vendedor.** La pantalla solo muestra lo que vendió "
+        "antes; no sabe qué ofrece hoy ni a qué precio."
+    )
 
 
 def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series, cuts: dict) -> None:
@@ -166,80 +199,114 @@ def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series
         height=table_height(len(view)),
         row_height=ROW_HEIGHT,
         column_config={
-            "#": st.column_config.NumberColumn(width=40),
+            "#": st.column_config.NumberColumn(width=40, help="Posición en el orden del recomendador"),
             "": st.column_config.TextColumn(width=36),
-            "Vendedor": st.column_config.TextColumn(width=96, help="Primeros 8 caracteres del código del vendedor"),
-            "Riesgo": st.column_config.TextColumn(
-                width=90, help="Con los mismos cortes que los pedidos a revisar. La lista va del menor al mayor riesgo."
+            "Vendedor": st.column_config.TextColumn(width=150, help="Código completo del vendedor"),
+            "Riesgo": st.column_config.TextColumn(width=90, help="Con los mismos cortes que los pedidos a revisar."),
+            "Puntaje": st.column_config.NumberColumn(
+                width=70, help="Puntaje de riesgo medio de sus pedidos anteriores, de 0 a 100. Sirve para ordenar."
             ),
-            "Llegan tarde": st.column_config.TextColumn(
-                help="De cada 100 pedidos suyos, cuántos espera el modelo que lleguen después de la fecha prometida."
+            "Ventas en este contexto": st.column_config.NumberColumn(help="Pedidos de esta categoría a este destino."),
+            "Precio histórico de referencia": st.column_config.NumberColumn(
+                format="R$ %.2f", help="Mediana de lo que cobró en sus ventas aquí. No es el precio actual."
             ),
-            "Ventas aquí": st.column_config.NumberColumn(help="Pedidos de esta categoría a este estado."),
-            "Precio mediano": st.column_config.NumberColumn(format="R$ %.2f", help="De sus ventas aquí."),
-            "Pedidos (historial)": st.column_config.NumberColumn(help="Todos sus pedidos antes del corte."),
+            "Pedidos anteriores": st.column_config.NumberColumn(help="Todos sus pedidos antes del corte."),
         },
     )
 
 
-def show_evaluation(rec: dict) -> None:
-    """Si sirve recomendar así, en palabras; cómo se midió y las cifras técnicas en un desplegable."""
-    st.markdown("### ¿Sirve recomendar así?")
-    business = resumen_negocio(rec["metrics"])
-    if business:
+def show_evaluation(rec: dict, p: dict) -> None:
+    """Qué encontramos al evaluar: una frase, un gráfico con escala desde cero y la aclaración."""
+    st.markdown("### Qué encontramos al evaluar las recomendaciones")
+    comparison = comparacion_criterios(rec["metrics"])
+    if comparison.empty:
+        return
+    rates = dict(zip(comparison["criterio"], comparison["etiqueta"]))
+    model, history, popular, random_pick = (rates.get(name, "—") for name in (
+        "Nuestro modelo", "El que menos se atrasó antes", "El que más vende", "Uno cualquiera (al azar)"))
+    vs_random = (
+        "tuvieron menos retrasos que un vendedor elegido al azar de la misma lista"
+        if es_significativa(rec["vs_random"])
+        else "tuvieron una tasa de retraso parecida a la de un vendedor elegido al azar"
+    )
+    st.markdown(
+        f'<p class="dc-muted">Repetimos la elección con pedidos aprobados entre el {rec["cut"]:%d/%m/%Y} y el '
+        f'{rec["test_end"]:%d/%m/%Y}, que el modelo no vio, en {format_int(rec["n_combos"])} combinaciones de '
+        f"categoría y destino. Para cada forma de elegir, medimos la tasa media de retraso de los {TOP_K} "
+        "vendedores que mostraba.</p>"
+        f'<p class="dc-lead">Los vendedores que el modelo ponía primero {vs_random} ({model} contra {random_pick}). '
+        f"Elegir al vendedor que menos se atrasó antes ({history}) o al que más vende ({popular}) dio resultados "
+        "cercanos: <b>no hay evidencia suficiente para decir que el modelo sea mejor que esas reglas simples</b>.</p>",
+        unsafe_allow_html=True,
+    )
+    st.altair_chart(_comparison_chart(comparison, p), width="stretch")
+    st.caption(
+        "Tasas medias por vendedor y combinación, en pedidos históricos ya entregados. Es una comparación "
+        "observacional: muestra qué pasó con esos vendedores, no garantiza el resultado de compras nuevas."
+    )
+
+
+def _comparison_chart(comparison: pd.DataFrame, p: dict) -> alt.LayerChart:
+    """Barras horizontales con el eje desde cero, para no agrandar diferencias chicas."""
+    data = comparison.assign(destacado=comparison["criterio"] == "Nuestro modelo")
+    top = max(0.05, float(data["tasa"].max()) * 1.25)
+    y = alt.Y(
+        "criterio:N",
+        sort=list(data["criterio"]),
+        title=None,
+        axis=alt.Axis(labelColor=p["text"], labelFontSize=13, labelLimit=260, domain=False, ticks=False),
+    )
+    x = alt.X(
+        "tasa:Q",
+        title="Tasa media de retraso",
+        scale=alt.Scale(domain=[0, top]),
+        axis=alt.Axis(format="%", labelColor=p["muted"], titleColor=p["muted"], gridColor=p["line"], tickCount=5),
+    )
+    base = alt.Chart(data).encode(y=y)
+    bars = base.mark_bar(size=CHART_ROW - 12, cornerRadius=4).encode(
+        x=x,
+        color=alt.condition(alt.datum.destacado, alt.value(p["accent"]), alt.value(p["muted"])),
+        tooltip=[alt.Tooltip("criterio:N", title="Forma de elegir"), alt.Tooltip("etiqueta:N", title="Tasa media")],
+    )
+    labels = base.mark_text(align="left", dx=6, color=p["text"], fontSize=13, fontWeight="bold").encode(
+        x="tasa:Q", text="etiqueta:N"
+    )
+    return (
+        (bars + labels)
+        .properties(height=alt.Step(CHART_ROW), background="transparent")
+        .configure_view(stroke=None)
+    )
+
+
+def show_technical(rec: dict) -> None:
+    """Métricas, intervalos y diagnóstico de despacho, para quien quiera el detalle."""
+    dispatch = rec["dispatch"]
+    with st.expander("Evaluación técnica — para el jurado"):
         st.markdown(
-            f'<p class="dc-lead">Si el cliente le compra a uno de los {TOP_K} recomendados, '
-            f'<b>{business["modelo"]} de cada 1.000</b> pedidos llegan tarde. Si elige un vendedor cualquiera, '
-            f'<b>{business["azar"]} de cada 1.000</b>. Son <b>{business["evitados"]} pedidos tarde menos cada 1.000</b>'
-            + (f' (1 de cada {business["uno_de_cada"]} retrasos).' if business["uno_de_cada"] else ".")
-            + "</p>",
-            unsafe_allow_html=True,
-        )
-        if business["reglas"]:
-            low, high = business["reglas"]
-            rules = f"{low} de cada 1.000" if low == high else f"entre {low} y {high} de cada 1.000"
-            st.markdown(
-                '<p class="dc-muted">Para ser honestos: elegir al vendedor que menos se atrasó antes, o al que más '
-                f"vende, da casi lo mismo ({rules}). El modelo suma poco frente a esas reglas simples, porque la "
-                "mayoría de los retrasos se produce en el transporte y no en el vendedor.</p>",
-                unsafe_allow_html=True,
-            )
-    with st.expander("Cómo lo medimos"):
-        st.markdown(
-            f"Lo probamos con pedidos desde el {rec['cut']:%d/%m/%Y}, que el modelo nunca vio. En "
-            f"{format_int(rec['n_combos'])} combinaciones de categoría y estado comparamos cuatro formas de elegir "
-            f"{TOP_K} vendedores. Un vendedor \"cumple\" si se atrasó menos que el promedio."
+            f"**Diseño.** En cada combinación de categoría y estado del cliente con al menos {2 * TOP_K} candidatos "
+            f"medibles se muestran {TOP_K} vendedores con cada criterio. Un vendedor es *bueno* si en test se retrasó "
+            "menos que la tasa media posterior. Precision@K: qué parte de los mostrados es buena; Recall@K: qué parte "
+            "de los buenos aparece entre los mostrados; tasa media: promedio por vendedor y luego por combinación."
         )
         st.dataframe(tabla_metricas(rec["metrics"]), width="stretch")
-        lines = [
-            "- **Frente a elegir uno cualquiera**, la mejora "
-            + ("no es casualidad." if es_significativa(rec["vs_random"]) else "podría ser casualidad.")
-        ]
-        for name, key in (("el que menos se atrasó antes", "vs_history"), ("el que más vende", "vs_popularity")):
-            lines.append(
-                f"- **Frente a elegir {name}**, "
-                + ("la mejora no es casualidad." if es_significativa(rec[key])
-                   else "la diferencia es tan chica que podría ser casualidad.")
-            )
-        st.markdown("\n".join(lines))
-        technical = rec["metrics"].loc["clasificador"]
-        st.caption(
-            f"Para el jurado técnico: Precision@{TOP_K} {format_pct(technical['precision'])}, "
-            f"Recall@{TOP_K} {format_pct(technical['recall'])}. Diferencia en el retraso frente al azar "
-            f"{texto_diferencia(rec['vs_random'])}; frente al historial {texto_diferencia(rec['vs_history'])}; "
-            f"frente a la popularidad {texto_diferencia(rec['vs_popularity'])}."
-        )
-
-
-def show_sellers_help(cut: pd.Timestamp) -> None:
-    with st.expander("Límites del recomendador"):
         st.markdown(
-            "- **Premia en parte a quien promete más días.** Recomienda cumplir lo prometido, no entregar más rápido.\n"
-            "- **El vendedor explica solo una parte del retraso.** 7 de cada 10 retrasos ocurren en el transporte, "
-            "no en el despacho del vendedor.\n"
-            f"- **Solo vendedores con historial:** al menos {MIN_PEDIDOS} pedidos antes del {cut:%d/%m/%Y}. "
-            "Los nuevos no se pueden recomendar.\n"
-            "- **Solo vemos lo vendido,** no qué vendedores ofrecían el mismo producto ni a qué precio.\n"
-            "- **Es observacional.** El efecto de recomendar se mediría con una prueba A/B.\n"
-            "- Detalle y cifras en `docs/recomendador.md` (`python -m src.recomendador` las reproduce)."
+            "**Diferencia en la tasa media de retraso del clasificador (bootstrap por combinación):**\n"
+            f"- frente al azar: {texto_diferencia(rec['vs_random'])};\n"
+            f"- frente al historial: {texto_diferencia(rec['vs_history'])};\n"
+            f"- frente a la popularidad: {texto_diferencia(rec['vs_popularity'])}.\n\n"
+            "Un intervalo que incluye el cero no permite afirmar diferencia."
+        )
+        st.markdown(
+            "**Despacho y retraso (diagnóstico, no entra al modelo).** De los pedidos que llegaron tarde, el "
+            f"{format_pct(dispatch['pct_retrasos_con_despacho_tarde'])} tuvo un vendedor que entregó a la "
+            "transportadora después del plazo límite registrado. En el resto, el despacho figura dentro del plazo; "
+            "sin datos de la transportadora (modalidad, tramos, eventos de entrega) no podemos decir dónde se "
+            f"generó la demora. Con despacho tarde, el pedido llegó tarde el "
+            f"{format_pct(dispatch['retraso_si_despacho_tarde'])} de las veces; con despacho a tiempo, el "
+            f"{format_pct(dispatch['retraso_si_despacho_a_tiempo'])}."
+        )
+        st.markdown(
+            "**Otros límites.** Es observacional: el efecto de recomendar se mediría con una prueba A/B. "
+            "Solo vemos lo vendido, no qué vendedores ofrecían el mismo producto ni a qué precio. "
+            "Detalle y cifras en `docs/recomendador.md` (`python -m src.recomendador` las reproduce)."
         )

@@ -51,7 +51,9 @@ from app.vista import (  # noqa: E402
     impact_weights,
     late_summary,
     lift_high,
+    main_view,
     one_in,
+    open_order,
     order_exists,
     plural,
     table_height,
@@ -61,17 +63,26 @@ from src.calibration import LEVELS  # noqa: E402
 from src.data_loading import load_raw_tables  # noqa: E402
 from src.feature_engineering import build_model_dataset, load_geolocation  # noqa: E402
 from src.features import PREDICTION_TIME_COL  # noqa: E402
+from src.target import TARGET_COL  # noqa: E402
 from src.validation import temporal_three_way_split  # noqa: E402
 
 LEVEL_INFO = {
     "alto": ("Riesgo alto", "Revisar hoy."),
     "medio": ("Riesgo medio", "Seguir de cerca."),
-    "bajo": ("Riesgo bajo", "Sin acción."),
+    "bajo": ("Riesgo bajo", "Seguimiento habitual."),
+}
+# Qué hacer con el pedido abierto. Son pasos del proceso de revisión, no causas: el modelo
+# no sabe por qué se retrasaría un pedido.
+LEVEL_STEPS = {
+    "alto": "Revisarlo hoy: verificar con el vendedor el estado del despacho y, si no llega a la fecha prometida, avisar al cliente.",
+    "medio": "Seguirlo de cerca: volver a mirarlo antes de la fecha prometida.",
+    "bajo": "Seguimiento habitual: no requiere una revisión especial.",
 }
 FACTORS_UP, FACTORS_DOWN = 3, 2
 ARROWS = {"up": "↑", "down": "↓"}
 CHART_STEP, CHART_BAR = 40, 28  # alto de cada fila del gráfico y de la barra dentro de la fila
-HINT_DEFAULT = "Viendo el pedido más riesgoso de la lista (seleccioná otra fila para inspeccionar)"
+OPEN_MARK = "▶"  # marca, en la tabla, la fila del pedido abierto en el inspector
+TABLE_HEIGHT = 600  # tope de la tabla de pedidos, cerca del alto del inspector para no dejar hueco
 COPY_LABEL, COPIED_LABEL = "📋 Copiar ID del pedido", "✅ ¡ID copiado!"
 DEFAULT_THEME = "light"
 TAB_ORDERS, TAB_SELLERS = "🚚 Pedidos a revisar", "🏪 Vendedores recomendados"
@@ -169,7 +180,7 @@ def show_header() -> None:
         brand, switch = st.columns([6, 1.2], vertical_alignment="center")
         brand.markdown(
             '<div class="dc-brand"><div class="dc-logo">DataCraft<span>.</span></div>'
-            '<div class="dc-sub">Riesgo de retraso por pedido · Olist</div></div>',
+            '<div class="dc-sub">Riesgo de retraso por pedido · Demostración con datos históricos de Olist</div></div>',
             unsafe_allow_html=True,
         )
         label, tip = THEME_SWITCH[p["name"]]
@@ -210,7 +221,9 @@ def show_toolbar(scored: pd.DataFrame) -> tuple[pd.DataFrame, str, bool, tuple]:
                 on_click=_clear_search,
             )
         show_real = right.toggle(
-            "Mostrar si se retrasó", key="show_real", help="Dato histórico: en un pedido nuevo todavía no se sabe."
+            "Mostrar si se retrasó (histórico)",
+            key="show_real",
+            help="Resultado real de estos pedidos ya entregados. En un pedido nuevo todavía no se sabe.",
         )
     start, end = period if len(period) == 2 else (period[0], period[0])
     return scored[(dates >= start) & (dates <= end)], search.strip(), show_real, full_period
@@ -219,14 +232,25 @@ def show_toolbar(scored: pd.DataFrame) -> tuple[pd.DataFrame, str, bool, tuple]:
 # ----------------------------------------------------------------------------- resumen
 
 
-def show_hero(summary: pd.DataFrame, n_orders: int) -> None:
-    """Una sola frase: cuántos pedidos hay que revisar. El detalle va en las tarjetas y el gráfico."""
-    high = summary.loc["alto"]
+def show_demo_note() -> None:
+    """Qué es esta pantalla: una demostración con pedidos que ya se entregaron."""
     st.markdown(
-        f'<p class="dc-hero">Hay <b>{format_int(high["pedidos"])}</b> pedidos en riesgo alto para revisar.</p>',
+        '<div class="dc-note"><b>Demostración con pedidos históricos.</b> Estos pedidos ya se entregaron. '
+        "La lista muestra en qué orden se habrían revisado al aprobar cada pago: el puntaje usa solo datos "
+        "conocidos en ese momento. Lo que pasó después se ve únicamente con «Mostrar si se retrasó» y en la "
+        "evaluación histórica, al final de la página.</div>",
         unsafe_allow_html=True,
     )
-    st.markdown(f'<p class="dc-muted">{format_int(n_orders)} pedidos en el período elegido.</p>', unsafe_allow_html=True)
+
+
+def show_hero(summary: pd.DataFrame, n_orders: int) -> None:
+    """Una sola frase: cuántos pedidos hay que revisar y sobre cuántos."""
+    high = summary.loc["alto"]
+    st.markdown(
+        f'<p class="dc-hero">Hay <b>{format_int(high["pedidos"])}</b> pedidos en riesgo alto para revisar '
+        f'<span class="dc-hero-sub">de {format_int(n_orders)} en el período elegido.</span></p>',
+        unsafe_allow_html=True,
+    )
 
 
 def show_level_cards(summary: pd.DataFrame, show_real: bool) -> None:
@@ -236,7 +260,7 @@ def show_level_cards(summary: pd.DataFrame, show_real: bool) -> None:
         row = summary.loc[level]
         title, action = LEVEL_INFO[level]
         late = (
-            f" · se retrasó el {format_pct(row['tasa_retraso_real'])}"
+            f" · histórico: se retrasó el {format_pct(row['tasa_retraso_real'])}"
             if show_real and "tasa_retraso_real" in summary.columns and row["pedidos"]
             else ""
         )
@@ -250,17 +274,25 @@ def show_level_cards(summary: pd.DataFrame, show_real: bool) -> None:
         )
 
 
-def show_share_chart(summary: pd.DataFrame) -> None:
-    """Dos barras al 100 % (pedidos y retrasos) y, al lado, cuánto concentra el nivel alto."""
+def show_history(summary: pd.DataFrame) -> None:
+    """Evaluación histórica: dónde cayeron los retrasos que ya ocurrieron. Siempre se rotula como tal,
+    esté o no activado «Mostrar si se retrasó», porque usa el resultado real de los pedidos."""
     if "pct_retrasos" not in summary.columns:
         return
-    st.markdown("##### Dónde están los retrasos")
-    chart_col, lift_col = st.columns([3, 1.15], gap="medium", vertical_alignment="center")
-    with chart_col:
-        st.altair_chart(_share_chart(summary), width="stretch")
-        st.caption("La parte roja de los retrasos es más grande que la de los pedidos: el nivel alto concentra retrasos.")
-    with lift_col:
-        show_lift(summary)
+    with st.expander("📊 Evaluación histórica: ¿el nivel alto concentró los retrasos?"):
+        st.markdown(
+            '<p class="dc-muted">Usa el resultado real de estos pedidos, que ya se entregaron. '
+            "Sirve para saber cuánto ayudó ordenar así en el pasado; en un pedido nuevo ese dato todavía no existe.</p>",
+            unsafe_allow_html=True,
+        )
+        chart_col, lift_col = st.columns([3, 1.15], gap="medium", vertical_alignment="center")
+        with chart_col:
+            st.altair_chart(_share_chart(summary), width="stretch")
+            st.caption(
+                "La parte roja de los retrasos es más grande que la de los pedidos: el nivel alto concentró retrasos."
+            )
+        with lift_col:
+            show_lift(summary)
 
 
 def show_lift(summary: pd.DataFrame) -> None:
@@ -270,7 +302,7 @@ def show_lift(summary: pd.DataFrame) -> None:
     high = summary.loc["alto"]
     st.markdown(
         f'<div class="dc-lift"><div class="n">{format_factor(lift)}</div>'
-        '<div class="t">más retrasos que revisando al azar</div>'
+        '<div class="t">más retrasos que revisando al azar (histórico)</div>'
         f'<div class="s">{SEMAFORO["alto"]} Revisando {one_in(high["pct_pedidos"])} pedidos (los rojos) '
         f'aparece {one_in(high["pct_retrasos"])} de todos los pedidos que se retrasaron.</div></div>',
         unsafe_allow_html=True,
@@ -358,63 +390,69 @@ def level_picker(summary: pd.DataFrame) -> str:
 
 def show_table_bar(
     in_period: pd.DataFrame, summary: pd.DataFrame, search: str, show_real: bool
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Selector de nivel y descarga en la misma línea, sobre la tabla."""
+) -> tuple[pd.DataFrame, pd.DataFrame, str]:
+    """Selector de nivel y descarga en la misma línea, sobre la tabla. El CSV lleva todas las columnas."""
     with st.container(key="dc-tablebar"):
         left, right = st.columns([3.2, 1], vertical_alignment="center")
         with left:
             level = level_picker(summary)
-        listed = filter_orders(in_period, level, search)
-        view = table_view(listed, show_real)
+        listed = filter_orders(in_period, level, search).reset_index(drop=True)
+        full = table_view(listed, show_real)
         right.download_button(
             "Descargar lista (CSV)",
-            view.to_csv(index=False).encode("utf-8-sig"),
+            full.to_csv(index=False).encode("utf-8-sig"),
             file_name="pedidos_a_revisar.csv",
             mime="text/csv",
             icon=":material/download:",
             width="stretch",
             disabled=listed.empty,
+            help="Todas las columnas de la lista: aprobación, distancia, precio y flete incluidos.",
         )
-    return listed, view
+    return listed, full, level
 
 
-# Anchos en píxeles para que las diez columnas entren sin desplazamiento horizontal
-# en una pantalla común (el código completo del pedido sigue en los datos y en el inspector).
+# La tabla principal tiene pocas columnas para que se lea bien; el resto está en el inspector y en el CSV.
 TABLE_COLUMNS = {
-    "Nivel": st.column_config.TextColumn(width=70),
+    " ": st.column_config.TextColumn(width=28, help="Pedido abierto en el inspector"),
+    "Prioridad": st.column_config.TextColumn(width=86),
     "Puntaje": st.column_config.ProgressColumn(
-        format="%d", min_value=0, max_value=SCORE_SCALE, width=76, help="De 0 a 100. Sirve para ordenar: más alto, más riesgo."
+        format="%d", min_value=0, max_value=SCORE_SCALE, width=86, help="De 0 a 100. Sirve para ordenar la revisión: más alto, antes."
     ),
-    "¿Se retrasó?": st.column_config.TextColumn(width=80),
-    "Pedido": st.column_config.TextColumn(width=112, help="Código completo del pedido (se ve entero en el inspector)"),
-    "Aprobado": st.column_config.DatetimeColumn(format="DD/MM/YY HH:mm", width=94),
-    "Estado": st.column_config.TextColumn(width=52),
-    "Plazo": st.column_config.NumberColumn(format="%d días", width=60),
-    "Distancia": st.column_config.NumberColumn(format="%d km", width=72),
-    "Precio": st.column_config.NumberColumn(format="R$ %.0f", width=64),
-    "Flete": st.column_config.NumberColumn(format="R$ %.0f", width=60),
+    "Pedido": st.column_config.TextColumn(width=280, help="Código completo del pedido"),
+    "Destino": st.column_config.TextColumn(width=70, help="Estado del cliente"),
+    "Plazo prometido": st.column_config.NumberColumn(format="%d días", width=110),
+    "¿Se retrasó? (histórico)": st.column_config.TextColumn(width=150),
 }
 
 
-def show_table(listed: pd.DataFrame, view: pd.DataFrame) -> tuple[str, int | None]:
-    """Tabla seleccionable. Devuelve el pedido a inspeccionar y la fila marcada (None si no hay)."""
-    event = st.dataframe(
-        view,
+def show_table(listed: pd.DataFrame, full: pd.DataFrame, show_real: bool, table_key: str) -> tuple[str, str, int]:
+    """Tabla seleccionable. Devuelve el pedido abierto, por qué está abierto y su fila en la lista.
+
+    La selección se guarda por código de pedido (`open_order`), así sobrevive a ordenar la
+    tabla, filtrar, buscar o cambiar de nivel mientras el pedido siga en la lista.
+    """
+    previous = st.session_state.get(table_key)
+    rows = previous["selection"]["rows"] if previous else []
+    order_id, reason = open_order(listed, rows[0] if rows else None, st.session_state.get("open_order"))
+    st.session_state["open_order"] = order_id
+    st.dataframe(
+        main_view(listed, show_real, order_id, OPEN_MARK),
         hide_index=True,
         width="stretch",
-        height=table_height(len(view)),  # se achica cuando quedan pocas filas
+        height=table_height(len(listed), TABLE_HEIGHT),  # alto parejo con el inspector; se achica con pocas filas
         row_height=ROW_HEIGHT,
         on_select="rerun",
         selection_mode="single-row",
         column_config=TABLE_COLUMNS,
+        key=table_key,
     )
-    rows = event.selection.rows
-    picked = rows[0] if rows and rows[0] < len(view) else None
     st.caption(
-        f"{plural(len(view), 'pedido')}, del más riesgoso al menos riesgoso. {late_summary(view)}"
-        "Marcá la casilla al inicio de una fila para inspeccionarla a la derecha."
+        f"{plural(len(listed), 'pedido')}, del más riesgoso al menos riesgoso. {late_summary(full)}"
+        f"Marcá la casilla de una fila para abrirla en el inspector ({OPEN_MARK} = pedido abierto). "
+        "Fecha de aprobación, distancia, precio y flete están en el inspector y en el CSV."
     )
-    return listed["order_id"].iloc[picked if picked is not None else 0], picked
+    position = int((listed["order_id"] == order_id).to_numpy().argmax())
+    return order_id, reason, position
 
 
 def show_empty_state(scored: pd.DataFrame, search: str, full_period: tuple) -> None:
@@ -453,43 +491,59 @@ def show_empty_state(scored: pd.DataFrame, search: str, full_period: tuple) -> N
 # ----------------------------------------------------------------------------- inspector
 
 
-def show_detail(order_id: str, scored: pd.DataFrame, orders: pd.DataFrame, picked: int | None) -> None:
+def show_detail(
+    order_id: str, scored: pd.DataFrame, orders: pd.DataFrame, reason: str, position: int, n_listed: int, show_real: bool
+) -> None:
+    """Primero el pedido abierto, su prioridad y qué hacer; después los datos y las señales del puntaje."""
     p = palette()
     order = scored.loc[scored["order_id"] == order_id].iloc[0]
     level = order["nivel_riesgo"]
-    title, action = LEVEL_INFO[level]
+    title, _ = LEVEL_INFO[level]
     colors = f'--lvl:{p["level"][level]};--soft:{p["level_soft"][level]};--ink:{p["level_text"][level]}'
-    hint = HINT_DEFAULT if picked is None else f"Fila {picked + 1} seleccionada en la tabla"
+    where = f"fila {format_int(position + 1)} de {format_int(n_listed)}"
+    hint = {
+        "fila": f"Elegido en la tabla · {where}",
+        "antes": f"Elegido antes · sigue en la lista, {where}",
+        "primero": "El primero de la lista · elegí otra fila para cambiarlo",
+    }[reason]
     with st.container(key="dc-inspector"):
         st.markdown(
-            '<div class="dc-eyebrow">Inspector de pedido</div>'
-            f'<div class="dc-hint{"" if picked is None else " picked"}">{hint}</div>'
+            '<div class="dc-eyebrow">Pedido abierto</div>'
+            f'<div class="dc-hint{"" if reason == "primero" else " picked"}" role="status">{hint}</div>'
             f'<div class="dc-oid">{escape(order_id)}</div>'
             f'<div class="dc-level" style="{colors}"><span class="dc-badge">{SEMAFORO[level]} {title}</span>'
-            f'<span class="dc-score">Puntaje <b>{round(order["prob_retraso"] * SCORE_SCALE)}</b>/{SCORE_SCALE}</span></div>',
+            f'<span class="dc-score">Puntaje <b>{round(order["prob_retraso"] * SCORE_SCALE)}</b>/{SCORE_SCALE}</span></div>'
+            '<div class="dc-fx-note">El puntaje sirve para ordenar la revisión; no es la probabilidad exacta de retraso.</div>'
+            f'<div class="dc-action" style="{colors}"><div class="k">Acción sugerida</div>'
+            f'<div class="t">{escape(LEVEL_STEPS[level])}</div></div>',
             unsafe_allow_html=True,
         )
         facts = [
+            ("Aprobado", f"{order[PREDICTION_TIME_COL]:%d/%m/%Y %H:%M}"),
+            ("Destino", order["customer_state"]),
             ("Plazo prometido", format_feature_value("promised_days", order["promised_days"])),
             ("Distancia", format_feature_value("max_distance_km", order["max_distance_km"])),
-            ("Estado del cliente", order["customer_state"]),
+            ("Precio", format_feature_value("total_price", order["total_price"])),
+            ("Flete", format_feature_value("total_freight", order["total_freight"])),
         ]
+        if show_real and TARGET_COL in order.index:
+            facts.append(("Resultado (histórico)", "Se retrasó" if order[TARGET_COL] == 1 else "Llegó a tiempo"))
         st.markdown(
-            '<div class="dc-facts">'
+            '<div class="dc-facts dc-facts-grid">'
             + "".join(f"<div><small>{label}</small><b>{escape(str(value))}</b></div>" for label, value in facts)
             + "</div>",
             unsafe_allow_html=True,
         )
         up, down = impact_weights(risk_factors(get_artifact(), orders, order_id), FACTORS_UP, FACTORS_DOWN)
-        _factor_block("Por qué tiene este nivel", "Sube el riesgo", up, "up")
-        if not down.empty:
-            _factor_block("Lo que juega a favor", "Baja el riesgo", down, "down")
-        st.markdown(
-            '<div class="dc-fx-note">Comparado con el pedido promedio del período.</div>'
-            f'<div class="dc-action" style="{colors}"><div class="k">Acción sugerida</div>'
-            f'<div class="t">{SEMAFORO[level]} {action}</div></div>',
-            unsafe_allow_html=True,
-        )
+        with st.expander("Qué sube y qué baja el puntaje"):
+            _factor_block("Suben el puntaje", "frente al pedido promedio", up, "up")
+            if not down.empty:
+                _factor_block("Bajan el puntaje", "frente al pedido promedio", down, "down")
+            st.markdown(
+                '<div class="dc-fx-note">Son las variables que más pesan en el modelo para este pedido. '
+                "No indican la causa de un retraso.</div>",
+                unsafe_allow_html=True,
+            )
         _copy_button(order_id)
 
 
@@ -571,7 +625,7 @@ def show_help() -> None:
 
 
 def show_orders_page() -> None:
-    """Pestaña de operaciones: pedidos del período con su nivel de riesgo y el inspector."""
+    """Pestaña de operaciones: resumen compacto, lista con inspector y, al final, la evaluación histórica."""
     try:
         orders, scored = get_orders(), get_scored_orders()
     except FileNotFoundError as error:
@@ -579,22 +633,25 @@ def show_orders_page() -> None:
         st.stop()
 
     in_period, search, show_real, full_period = show_toolbar(scored)
+    show_demo_note()
     summary = summary_by_level(in_period)
     show_hero(summary, len(in_period))
     show_level_cards(summary, show_real)
-    st.write("")
-    show_share_chart(summary)
 
     st.markdown("### Pedidos a revisar")
-    listed, view = show_table_bar(in_period, summary, search, show_real)
+    listed, full, level = show_table_bar(in_period, summary, search, show_real)
     if listed.empty:
         show_empty_state(scored, search, full_period)
     else:
-        table_col, detail_col = st.columns([2.6, 1], gap="small")
+        dates = in_period[PREDICTION_TIME_COL]
+        gen = st.session_state.get("gen", 0)
+        table_key = f"orders-{gen}-{level}-{search}-{dates.min():%Y%m%d}-{dates.max():%Y%m%d}"
+        table_col, detail_col = st.columns([2.2, 1], gap="small")
         with table_col:
-            order_id, picked = show_table(listed, view)
+            order_id, reason, position = show_table(listed, full, show_real, table_key)
         with detail_col:
-            show_detail(order_id, scored, orders, picked)
+            show_detail(order_id, scored, orders, reason, position, len(listed), show_real)
+    show_history(summary)
     show_help()
     trained_with = get_artifact()["entrenado_con"].replace("validacion", "validación")
     st.caption(f"Modelo: regresión logística calibrada, entrenada con {trained_with}.")

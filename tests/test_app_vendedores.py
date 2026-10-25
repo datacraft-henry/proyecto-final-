@@ -5,13 +5,13 @@ from app.vendedores import (
     MIN_CANDIDATOS,
     categorias,
     combinaciones,
-    de_cada_100,
+    comparacion_criterios,
     es_significativa,
     estados_de,
     nombre_categoria,
     nombre_estado,
     nivel_riesgo,
-    resumen_negocio,
+    puntaje,
     resumen_top,
     tabla_metricas,
     tabla_vendedores,
@@ -74,24 +74,26 @@ def test_la_tabla_respeta_el_orden_del_recomendador(lista, estado_vendedor):
     """La pestaña no reordena: si el recomendador cambia de criterio, cambia la lista que llega y nada más."""
     al_reves = lista.iloc[::-1]
     tabla = tabla_vendedores(al_reves, "RJ", estado_vendedor, top_k=2)
-    assert list(tabla["Vendedor"]) == ["vend-cua", "vend-tre", "vend-dos", "vend-uno"]
+    assert list(tabla["Vendedor"]) == ["vend-cuat-004", "vend-tres-003", "vend-dos-0002", "vend-uno-0001"]
     assert list(tabla[""]) == ["⭐", "⭐", "", ""]
 
 
-def test_la_tabla_marca_los_primeros_y_muestra_el_riesgo_en_palabras(lista, estado_vendedor):
+def test_la_tabla_marca_los_primeros_y_muestra_nivel_y_puntaje(lista, estado_vendedor):
+    """El riesgo se muestra como nivel y puntaje para ordenar, no como frecuencia futura de retrasos."""
     tabla = tabla_vendedores(lista, "RJ", estado_vendedor, CORTES, top_k=3)
     assert list(tabla["#"]) == [1, 2, 3, 4]
     assert list(tabla[""]) == ["⭐", "⭐", "⭐", ""]
-    assert list(tabla["Llegan tarde"]) == ["3 de cada 100", "4 de cada 100", "5 de cada 100", "9 de cada 100"]
+    assert list(tabla["Puntaje"]) == [3, 4, 5, 9]
     assert list(tabla["Riesgo"]) == ["🟢 Bajo", "🟢 Bajo", "🟡 Medio", "🟡 Medio"]
-    assert list(tabla["Desde"]) == ["São Paulo", "Rio de Janeiro (local)", "Minas Gerais", "—"]
-    assert list(tabla["Ventas aquí"]) == [11, 14, 48, 9]
+    assert list(tabla["Origen"]) == ["São Paulo", "Rio de Janeiro (mismo estado)", "Minas Gerais", "—"]
+    assert list(tabla["Ventas en este contexto"]) == [11, 14, 48, 9]
+    assert not any("de cada" in c for c in tabla.columns)
 
 
 def test_la_tabla_omite_las_columnas_que_el_recomendador_no_devuelve(lista, estado_vendedor):
     tabla = tabla_vendedores(lista.drop(columns=["pedidos_hist", "precio_mediano"]), "RJ", estado_vendedor)
-    assert "Pedidos (historial)" not in tabla.columns and "Precio mediano" not in tabla.columns
-    assert {"Llegan tarde", "Ventas aquí"} <= set(tabla.columns)
+    assert "Pedidos anteriores" not in tabla.columns and "Precio histórico de referencia" not in tabla.columns
+    assert {"Puntaje", "Ventas en este contexto"} <= set(tabla.columns)
     assert "Riesgo" not in tabla.columns  # sin cortes no hay nivel
 
 
@@ -109,16 +111,27 @@ def test_el_resumen_queda_vacio_si_faltan_datos(lista):
     assert r["riesgo_top"] is None and r["riesgo_todos"] is None
 
 
-def test_tabla_de_metricas_en_palabras():
+def test_tabla_de_metricas_para_el_jurado():
     resumen = pd.DataFrame(
         {"precision": [0.712, 0.661], "recall": [0.283, 0.270], "retraso": [0.0257, 0.0314]},
         index=["clasificador", "azar"],
     )
-    vista = tabla_metricas(resumen)
+    vista = tabla_metricas(resumen, k=3)
     assert list(vista.index) == ["Nuestro modelo", "Uno cualquiera (al azar)"]
-    assert vista.loc["Nuestro modelo", "Pedidos tarde (de cada 1.000)"] == 26
-    assert vista.loc["Uno cualquiera (al azar)", "Recomendados que cumplen mejor que el promedio (de cada 100)"] == 66
-    assert not any("Recall" in c or "Precision" in c for c in vista.columns)
+    assert vista.loc["Nuestro modelo", "Precision@3"] == "71,2 %"
+    assert vista.loc["Uno cualquiera (al azar)", "Tasa media de retraso de los mostrados"] == "3,1 %"
+
+
+def test_la_comparacion_sigue_el_orden_de_los_criterios_y_no_redondea_a_pedidos():
+    resumen = pd.DataFrame(
+        {"retraso": [0.0314, 0.0258, 0.0280, 0.0275]}, index=["azar", "clasificador", "historial", "popularidad"]
+    )
+    c = comparacion_criterios(resumen)
+    assert list(c["criterio"]) == [
+        "Nuestro modelo", "El que menos se atrasó antes", "El que más vende", "Uno cualquiera (al azar)"
+    ]
+    assert list(c["etiqueta"]) == ["2,6 %", "2,8 %", "2,8 %", "3,1 %"]
+    assert comparacion_criterios(resumen.drop(columns=["retraso"])).empty
 
 
 def test_significancia_y_texto_de_la_diferencia():
@@ -129,26 +142,16 @@ def test_significancia_y_texto_de_la_diferencia():
 
 
 def test_formatos():
-    assert nombre_categoria("cama_mesa_banho", {"cama_mesa_banho": "bed_bath_table"}) == "bed bath table"
+    # Español primero (la clave interna no cambia); si no hay, inglés de Kaggle; si no, la clave.
+    assert nombre_categoria("cama_mesa_banho", {"cama_mesa_banho": "bed_bath_table"}) == "Cama, mesa y baño"
+    assert nombre_categoria("otra_cosa", {"otra_cosa": "other_thing"}) == "other thing"
     assert nombre_categoria("sin_categoria", {}) == "sin categoria"
     assert texto_reales(1234.5) == "R$ 1.234,50"
     assert texto_reales(None) == "—"
     assert texto_vendedores(1) == "1 vendedor" and texto_vendedores(1500) == "1.500 vendedores"
 
 
-def test_riesgo_en_palabras_y_nivel():
-    assert de_cada_100(0.074) == "7 de cada 100"
-    assert de_cada_100(0.003) == "menos de 1 de cada 100"
-    assert de_cada_100(None) == "—"
+def test_puntaje_y_nivel():
+    assert puntaje(0.074) == 7
+    assert puntaje(None) is None
     assert nivel_riesgo([0.01, 0.05, 0.25], CORTES) == ["🟢 Bajo", "🟡 Medio", "🔴 Alto"]
-
-
-def test_resumen_de_negocio_en_pedidos_de_cada_mil():
-    resumen = pd.DataFrame(
-        {"retraso": [0.0258, 0.0280, 0.0275, 0.0314]}, index=["clasificador", "historial", "popularidad", "azar"]
-    )
-    r = resumen_negocio(resumen)
-    assert (r["modelo"], r["azar"], r["evitados"]) == (26, 31, 5)
-    assert r["uno_de_cada"] == 6
-    assert r["reglas"] == (28, 28)
-    assert resumen_negocio(resumen.drop(index="azar")) is None

@@ -74,6 +74,41 @@ def table_view(orders: pd.DataFrame, show_real: bool) -> pd.DataFrame:
     return view
 
 
+def main_view(orders: pd.DataFrame, show_real: bool, open_id: str | None, mark: str = "▶") -> pd.DataFrame:
+    """Tabla principal, más corta que la del CSV: prioridad, puntaje, pedido, destino y plazo.
+
+    Marca con `mark` la fila del pedido abierto en el inspector. El resto de los datos va al
+    inspector y a la descarga (table_view). El código del pedido se deja completo.
+    """
+    view = pd.DataFrame(
+        {
+            " ": (orders["order_id"] == open_id).map({True: mark, False: ""}),
+            "Prioridad": orders["semaforo"] + " " + orders["nivel_riesgo"].str.capitalize(),
+            "Puntaje": (orders["prob_retraso"] * SCORE_SCALE).round(0),
+            "Pedido": orders["order_id"],
+            "Destino": orders["customer_state"],
+            "Plazo prometido": orders["promised_days"],
+        }
+    )
+    if show_real and TARGET_COL in orders.columns:
+        view["¿Se retrasó? (histórico)"] = orders[TARGET_COL].map({1: "Sí", 0: "No"})
+    return view.reset_index(drop=True)
+
+
+def open_order(listed: pd.DataFrame, picked_row: int | None, remembered: str | None) -> tuple[str, str]:
+    """Qué pedido abrir en el inspector y por qué: 'fila' (elegido en esta tabla), 'antes'
+    (elegido antes y todavía en la lista, aunque cambien nivel, búsqueda u orden) o 'primero'.
+
+    La selección se guarda por código de pedido, no por número de fila.
+    """
+    ids = listed["order_id"]
+    if picked_row is not None and 0 <= picked_row < len(listed):
+        return ids.iloc[picked_row], "fila"
+    if remembered is not None and (ids == remembered).any():
+        return remembered, "antes"
+    return ids.iloc[0], "primero"
+
+
 def late_summary(view: pd.DataFrame) -> str:
     """'Se retrasaron 142 (7,6 %). ' cuando la tabla muestra el dato real; vacío si no."""
     if "¿Se retrasó?" not in view.columns or view.empty:
