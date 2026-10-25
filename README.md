@@ -2,7 +2,7 @@
 
 Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las entregas de pedidos de Olist, utilizando información comercial y logística disponible al momento de aprobar la compra.
 
-**Misión de DataCraft:** convertir los datos que una empresa ya tiene en decisiones que su equipo pueda tomar hoy, con modelos honestos sobre lo que saben y lo que no.
+**Misión de DataCraft:** ayudar a las empresas a decidir mejor con los datos que ya tienen. Transformamos información operativa en decisiones claras y accionables: qué pedido revisar primero, qué vendedor conviene recomendar y dónde conviene actuar.
 
 **Contacto:** equipodatacraft@gmail.com
 
