@@ -122,3 +122,11 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 - **Alineación con el target (2026-10-20):** el script ya no calcula el target por su cuenta. `src/unificacion.py` (`agregar_target`) llama a `build_target` de `src/target.py` y une el resultado a `fact_orders` con un left join por `order_id`. Se conservan los 99.441 pedidos; 96.203 quedan etiquetados (tasa 6,79 %, igual que el modelo) y 3.238 en vacío (no entregados, sin fecha o fuera del período del punto 8). La columna pasa de `entrega_tardia` a `pedido_retrasado` (acordado con Agustina). Tests en `tests/test_unificacion.py`.
 - **Límite:** `fact_orders` incluye datos posteriores a la aprobación (fechas de entrega, reseñas). Por el punto 4 no es entrada del modelo, que usa la tabla de `src/features.py`.
 - **Implementación:** `python scripts/unificacion/unificar_olist.py data/raw data/processed/olist_limpio`. Detalle en `scripts/unificacion/README.md`.
+
+## 12. Sistema de recomendación: vendedores ordenados por el clasificador
+
+- **Estado:** Propuesta del equipo. La decide Nelson, el PO, en la Demo 2 del 28/10.
+- **Decisión:** el recomendador de vendedores deja de ser un prototipo y pasa a ser el sistema de recomendación del proyecto. Ordena a los vendedores por el riesgo medio que el clasificador calibrado (punto 9 y 10) predice para sus pedidos, sin reentrenarlo. La tasa histórica suavizada y la popularidad quedan como baselines.
+- **Por qué contextual:** el 96,9 % de los clientes compra una sola vez, así que no hay historial por cliente para un filtrado colaborativo. Se recomienda según la categoría que busca el cliente y su estado de destino.
+- **Evaluación:** en el período de test del clasificador (27/05 al 29/08/2018), con Precision@K, Recall@K y el retraso de los vendedores mostrados. Con K = 3, el retraso de los recomendados es 2,58 %, contra 2,79 % historial, 2,75 % popularidad y 3,14 % azar. La ventaja sobre el historial y sobre la popularidad no es significativa, y se dice así.
+- **Implementación:** `src/recomendador.py` (`preparar_clasificador`, `puntaje_vendedores`, `recomendar`, `evaluar_recomendacion`), `python -m src.recomendador`, tests en `tests/test_recomendador.py`. Detalle en `docs/recomendador.md`. La pestaña en la app de Streamlit la suma Cristian con `recomendar`.

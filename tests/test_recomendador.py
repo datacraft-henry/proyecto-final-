@@ -4,6 +4,11 @@ import pytest
 from src.recomendador import (
     CORTE,
     pedidos_un_vendedor,
+    evaluar_recomendacion,
+    puntaje_vendedores,
+    recomendar,
+    resumen_evaluacion,
+    recompra_tras_primer_pedido,
     preparar,
     retraso_que_empieza_en_el_vendedor,
     riesgo_vendedores,
@@ -104,3 +109,85 @@ def test_retraso_que_empieza_en_el_vendedor():
 def test_corte_por_defecto():
     assert CORTE == pd.Timestamp("2018-01-01")
     assert TARGET_COL == "pedido_retrasado"
+
+
+def test_recompra_cuenta_solo_compras_posteriores_dentro_del_plazo():
+    """Cliente A: primer pedido tarde, vuelve a los 30 días. B: a tiempo, vuelve a los 400. C: a tiempo, no vuelve."""
+    spec = [("v", "2017-03-01", True, False), ("v", "2017-03-31", False, False),
+            ("v", "2017-03-01", False, False), ("v", "2018-04-05", False, False),
+            ("v", "2017-03-01", False, False)]
+    tablas = _tablas(spec)
+    tablas["customers"]["customer_unique_id"] = ["A", "A", "B", "B", "C"]
+    r = recompra_tras_primer_pedido(tablas, dias=180, hasta="2017-06-30")
+    assert r.loc[1, "clientes"] == 1 and r.loc[1, "recompra"] == pytest.approx(1.0)
+    assert r.loc[0, "clientes"] == 2 and r.loc[0, "recompra"] == pytest.approx(0.0)
+
+
+# --------------------------------------------------------------------------- sistema de recomendación
+CORTE_TEST = pd.Timestamp("2018-06-01")
+
+
+def _pedidos_con_riesgo(vendedores, n_antes=10, n_despues=6, categoria="cama_mesa_banho", estado="RJ"):
+    """Pedidos ya armados como los de preparar_clasificador.
+
+    vendedores: lista de (seller_id, riesgo predicho antes del corte, retrasos de n_despues después).
+    """
+    filas = []
+    for vendedor, riesgo, tardes in vendedores:
+        for i in range(n_antes):
+            filas.append((vendedor, "2018-03-01", riesgo, 0))
+        for i in range(n_despues):
+            filas.append((vendedor, "2018-07-01", 0.5, int(i < tardes)))
+    pedidos = pd.DataFrame(filas, columns=["seller_id", "order_approved_at", "prob_retraso", TARGET_COL])
+    pedidos["order_id"] = [f"o{i}" for i in range(len(pedidos))]
+    pedidos["order_approved_at"] = pd.to_datetime(pedidos["order_approved_at"])
+    pedidos["product_category_name"] = categoria
+    pedidos["customer_state"] = estado
+    pedidos["price"] = 50.0
+    return pedidos
+
+
+def test_el_riesgo_del_vendedor_solo_usa_pedidos_anteriores_al_corte():
+    """Anti-fuga: cambiar riesgo o retrasos después del corte no mueve el puntaje."""
+    base = _pedidos_con_riesgo([("a", 0.1, 0), ("b", 0.3, 0)])
+    otro = base.copy()
+    despues = otro["order_approved_at"] >= CORTE_TEST
+    otro.loc[despues, "prob_retraso"] = 0.99
+    otro.loc[despues, TARGET_COL] = 1
+    pd.testing.assert_frame_equal(puntaje_vendedores(base, CORTE_TEST), puntaje_vendedores(otro, CORTE_TEST))
+
+
+def test_el_clasificador_acierta_cuando_su_riesgo_coincide_con_el_retraso_posterior():
+    """Seis vendedores: los 3 de menor riesgo predicho no se retrasan en test; los otros 3 sí."""
+    pedidos = _pedidos_con_riesgo([(f"v{i}", 0.05 * (i + 1), 0 if i < 3 else 3) for i in range(6)])
+    tabla = evaluar_recomendacion(pedidos, puntaje_vendedores(pedidos, CORTE_TEST), CORTE_TEST, k=3)
+    resumen = resumen_evaluacion(tabla)
+    assert len(tabla) == 1
+    assert resumen.loc["clasificador", "precision"] == pytest.approx(1.0)
+    assert resumen.loc["clasificador", "recall"] == pytest.approx(1.0)
+    assert resumen.loc["azar", "precision"] == pytest.approx(0.5)
+    assert resumen.loc["clasificador", "retraso"] < resumen.loc["azar", "retraso"]
+
+
+def test_sin_candidatos_suficientes_no_se_evalua():
+    pedidos = _pedidos_con_riesgo([(f"v{i}", 0.1, 0 if i < 2 else 3) for i in range(4)])  # 4 < 2K
+    with pytest.raises(ValueError):
+        evaluar_recomendacion(pedidos, puntaje_vendedores(pedidos, CORTE_TEST), CORTE_TEST, k=3)
+
+
+def test_recomendar_ordena_por_riesgo_predicho_y_respeta_el_contexto():
+    pedidos = pd.concat([
+        _pedidos_con_riesgo([("a", 0.30, 0), ("b", 0.10, 0), ("c", 0.20, 0)]),
+        _pedidos_con_riesgo([("d", 0.01, 0)], estado="SP"),  # el más seguro, pero de otro estado
+    ], ignore_index=True)
+    pedidos["order_id"] = [f"o{i}" for i in range(len(pedidos))]
+    vend = puntaje_vendedores(pedidos, CORTE_TEST)
+    lista = recomendar(pedidos, vend, CORTE_TEST, "cama_mesa_banho", "RJ", k=2)
+    assert list(lista.index) == ["b", "c"]
+    assert lista["ventas_aqui"].tolist() == [10, 10]
+
+
+def test_sin_historial_suficiente_no_se_recomienda():
+    pedidos = _pedidos_con_riesgo([("a", 0.1, 0)], n_antes=3)  # menos de MIN_PEDIDOS antes del corte
+    vend = puntaje_vendedores(pedidos, CORTE_TEST)
+    assert recomendar(pedidos, vend, CORTE_TEST, "cama_mesa_banho", "RJ").empty
