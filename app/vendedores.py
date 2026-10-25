@@ -8,7 +8,7 @@ llega y no vuelve a ordenarla. Las columnas que el recomendador no devuelva no s
 import pandas as pd
 
 from app.riesgo import SEMAFORO
-from app.vista import format_int, format_pct
+from app.vista import format_int
 from src.calibration import assign_risk_level
 
 TOP_K = 3  # vendedores recomendados por pantalla
@@ -25,10 +25,10 @@ ESTADOS = {
 
 # Criterios de src.recomendador.CRITERIOS, con el nombre que se ve en pantalla.
 CRITERIOS = {
-    "clasificador": "Recomendador (clasificador)",
-    "historial": "Historial del vendedor",
-    "popularidad": "Popularidad",
-    "azar": "Al azar",
+    "clasificador": "Nuestro modelo",
+    "historial": "El que menos se atrasó antes",
+    "popularidad": "El que más vende",
+    "azar": "Uno cualquiera (al azar)",
 }
 
 COLUMNAS = {
@@ -134,31 +134,42 @@ def resumen_top(lista: pd.DataFrame, top_k: int = TOP_K) -> dict:
     }
 
 
-def tabla_metricas(resumen: pd.DataFrame, k: int = TOP_K) -> pd.DataFrame:
-    """Precision@K, Recall@K y retraso de los mostrados por criterio (resumen_evaluacion), en texto."""
-    columnas = {"precision": f"Precision@{k}", "recall": f"Recall@{k}", "retraso": "Retraso de los mostrados"}
+def tabla_metricas(resumen: pd.DataFrame) -> pd.DataFrame:
+    """Las cuatro formas de elegir vendedores, en palabras: pedidos tarde y vendedores que cumplen."""
+    columnas = {
+        "retraso": ("Pedidos tarde (de cada 1.000)", por_mil),
+        "precision": ("Recomendados que cumplen mejor que el promedio (de cada 100)", lambda x: round(x * 100)),
+    }
     vista = pd.DataFrame(
-        {titulo: resumen[columna].map(format_pct) for columna, titulo in columnas.items() if columna in resumen.columns}
+        {titulo: resumen[columna].map(f) for columna, (titulo, f) in columnas.items() if columna in resumen.columns}
     )
     vista.index = [CRITERIOS.get(c, c) for c in resumen.index]
-    vista.index.name = "Criterio"
+    vista.index.name = "Cómo se elige"
     return vista
 
 
-def resumen_negocio(resumen: pd.DataFrame) -> dict | None:
-    """Retraso de los recomendados contra elegir al azar, y cuántos retrasos se evitan.
+def por_mil(tasa: float) -> int:
+    """0.0258 -> 26: pedidos tarde de cada 1.000."""
+    return round(tasa * 1000)
 
-    {'recomendados': 0.0258, 'azar': 0.0314, 'menos': 0.18, 'uno_de_cada': 6}, o None si falta un criterio.
+
+def resumen_negocio(resumen: pd.DataFrame) -> dict | None:
+    """Pedidos tarde de cada 1.000 con los recomendados, al azar y con las reglas simples.
+
+    {'modelo': 26, 'azar': 31, 'evitados': 5, 'uno_de_cada': 6, 'reglas': (27, 28)},
+    o None si falta el modelo o el azar.
     """
     if "retraso" not in resumen.columns or not {"clasificador", "azar"} <= set(resumen.index):
         return None
-    recomendados, azar = float(resumen.loc["clasificador", "retraso"]), float(resumen.loc["azar", "retraso"])
-    menos = 1 - recomendados / azar if azar > 0 else 0.0
+    retraso = resumen["retraso"]
+    menos = 1 - retraso["clasificador"] / retraso["azar"] if retraso["azar"] > 0 else 0.0
+    reglas = sorted(por_mil(retraso[c]) for c in ("historial", "popularidad") if c in retraso.index)
     return {
-        "recomendados": recomendados,
-        "azar": azar,
-        "menos": menos,
+        "modelo": por_mil(retraso["clasificador"]),
+        "azar": por_mil(retraso["azar"]),
+        "evitados": por_mil(retraso["azar"]) - por_mil(retraso["clasificador"]),
         "uno_de_cada": round(1 / menos) if menos > 0 else None,
+        "reglas": (reglas[0], reglas[-1]) if reglas else None,
     }
 
 

@@ -183,36 +183,52 @@ def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series
 
 
 def show_evaluation(rec: dict) -> None:
-    """Cuánto ayuda en una frase de negocio; Precision@K, Recall@K e IC en un desplegable."""
-    st.markdown("### ¿Cuánto ayuda recomendar así?")
+    """Si sirve recomendar así, en palabras; cómo se midió y las cifras técnicas en un desplegable."""
+    st.markdown("### ¿Sirve recomendar así?")
     business = resumen_negocio(rec["metrics"])
-    if business and business["uno_de_cada"]:
+    if business:
         st.markdown(
-            f'<p class="dc-lead">Comprándole a los {TOP_K} recomendados, los pedidos llegaron tarde '
-            f'<b>{format_pct(business["recomendados"])}</b> de las veces, contra '
-            f'<b>{format_pct(business["azar"])}</b> eligiendo un vendedor al azar: '
-            f'<b>1 de cada {business["uno_de_cada"]} retrasos menos</b>.</p>'
-            '<p class="dc-muted">Elegir por el historial del vendedor o por los que más venden da un resultado '
-            "parecido: la ventaja del modelo sobre esas reglas simples es chica.</p>",
+            f'<p class="dc-lead">Si el cliente le compra a uno de los {TOP_K} recomendados, '
+            f'<b>{business["modelo"]} de cada 1.000</b> pedidos llegan tarde. Si elige un vendedor cualquiera, '
+            f'<b>{business["azar"]} de cada 1.000</b>. Son <b>{business["evitados"]} pedidos tarde menos cada 1.000</b>'
+            + (f' (1 de cada {business["uno_de_cada"]} retrasos).' if business["uno_de_cada"] else ".")
+            + "</p>",
             unsafe_allow_html=True,
         )
-    with st.expander("Detalle técnico"):
+        if business["reglas"]:
+            low, high = business["reglas"]
+            rules = f"{low} de cada 1.000" if low == high else f"entre {low} y {high} de cada 1.000"
+            st.markdown(
+                '<p class="dc-muted">Para ser honestos: elegir al vendedor que menos se atrasó antes, o al que más '
+                f"vende, da casi lo mismo ({rules}). El modelo suma poco frente a esas reglas simples, porque la "
+                "mayoría de los retrasos se produce en el transporte y no en el vendedor.</p>",
+                unsafe_allow_html=True,
+            )
+    with st.expander("Cómo lo medimos"):
         st.markdown(
-            f"Medido en el período de test (desde el {rec['cut']:%d/%m/%Y}), que el clasificador no vio: en "
-            f"{format_int(rec['n_combos'])} combinaciones de categoría y estado se mostraron {TOP_K} vendedores "
-            "con cada criterio. Un vendedor es bueno si en test se retrasó menos que la media."
+            f"Lo probamos con pedidos desde el {rec['cut']:%d/%m/%Y}, que el modelo nunca vio. En "
+            f"{format_int(rec['n_combos'])} combinaciones de categoría y estado comparamos cuatro formas de elegir "
+            f"{TOP_K} vendedores. Un vendedor \"cumple\" si se atrasó menos que el promedio."
         )
         st.dataframe(tabla_metricas(rec["metrics"]), width="stretch")
-        lines = [f"- **Frente al azar**, el retraso de los mostrados cambia {texto_diferencia(rec['vs_random'])}."]
-        for name, key in (("historial", "vs_history"), ("popularidad", "vs_popularity")):
-            ic = rec[key]
-            verdict = (
-                "La diferencia es significativa."
-                if es_significativa(ic)
-                else f"La diferencia no es significativa: no se distingue de recomendar por {name}."
+        lines = [
+            "- **Frente a elegir uno cualquiera**, la mejora "
+            + ("no es casualidad." if es_significativa(rec["vs_random"]) else "podría ser casualidad.")
+        ]
+        for name, key in (("el que menos se atrasó antes", "vs_history"), ("el que más vende", "vs_popularity")):
+            lines.append(
+                f"- **Frente a elegir {name}**, "
+                + ("la mejora no es casualidad." if es_significativa(rec[key])
+                   else "la diferencia es tan chica que podría ser casualidad.")
             )
-            lines.append(f"- **Frente a la {name}**, cambia {texto_diferencia(ic)}. {verdict}")
         st.markdown("\n".join(lines))
+        technical = rec["metrics"].loc["clasificador"]
+        st.caption(
+            f"Para el jurado técnico: Precision@{TOP_K} {format_pct(technical['precision'])}, "
+            f"Recall@{TOP_K} {format_pct(technical['recall'])}. Diferencia en el retraso frente al azar "
+            f"{texto_diferencia(rec['vs_random'])}; frente al historial {texto_diferencia(rec['vs_history'])}; "
+            f"frente a la popularidad {texto_diferencia(rec['vs_popularity'])}."
+        )
 
 
 def show_sellers_help(cut: pd.Timestamp) -> None:

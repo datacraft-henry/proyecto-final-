@@ -109,15 +109,16 @@ def test_el_resumen_queda_vacio_si_faltan_datos(lista):
     assert r["riesgo_top"] is None and r["riesgo_todos"] is None
 
 
-def test_tabla_de_metricas_con_nombres_de_criterio():
+def test_tabla_de_metricas_en_palabras():
     resumen = pd.DataFrame(
         {"precision": [0.712, 0.661], "recall": [0.283, 0.270], "retraso": [0.0257, 0.0314]},
         index=["clasificador", "azar"],
     )
-    vista = tabla_metricas(resumen, k=3)
-    assert list(vista.index) == ["Recomendador (clasificador)", "Al azar"]
-    assert vista.loc["Recomendador (clasificador)", "Precision@3"] == "71,2 %"
-    assert vista.loc["Al azar", "Retraso de los mostrados"] == "3,1 %"
+    vista = tabla_metricas(resumen)
+    assert list(vista.index) == ["Nuestro modelo", "Uno cualquiera (al azar)"]
+    assert vista.loc["Nuestro modelo", "Pedidos tarde (de cada 1.000)"] == 26
+    assert vista.loc["Uno cualquiera (al azar)", "Recomendados que cumplen mejor que el promedio (de cada 100)"] == 66
+    assert not any("Recall" in c or "Precision" in c for c in vista.columns)
 
 
 def test_significancia_y_texto_de_la_diferencia():
@@ -142,9 +143,12 @@ def test_riesgo_en_palabras_y_nivel():
     assert nivel_riesgo([0.01, 0.05, 0.25], CORTES) == ["🟢 Bajo", "🟡 Medio", "🔴 Alto"]
 
 
-def test_resumen_de_negocio_frente_al_azar():
-    resumen = pd.DataFrame({"retraso": [0.0258, 0.0314]}, index=["clasificador", "azar"])
+def test_resumen_de_negocio_en_pedidos_de_cada_mil():
+    resumen = pd.DataFrame(
+        {"retraso": [0.0258, 0.0280, 0.0275, 0.0314]}, index=["clasificador", "historial", "popularidad", "azar"]
+    )
     r = resumen_negocio(resumen)
-    assert r["menos"] == pytest.approx(0.178, abs=1e-3)
+    assert (r["modelo"], r["azar"], r["evitados"]) == (26, 31, 5)
     assert r["uno_de_cada"] == 6
+    assert r["reglas"] == (28, 28)
     assert resumen_negocio(resumen.drop(index="azar")) is None
