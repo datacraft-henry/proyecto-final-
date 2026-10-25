@@ -122,6 +122,24 @@ h1, h2, h3, .dc-serif {{ font-family: Georgia, 'Times New Roman', serif; letter-
 .dc-hero {{ font-family: Georgia, serif; font-size: 1.45rem; line-height: 1.35; color: {p["text"]}; margin: 4px 0 2px; }}
 .dc-hero b {{ color: {p["accent_text"]}; }}
 .dc-muted {{ color: {p["muted"]}; font-size: 0.9rem; }}
+.dc-lead {{ font-size: 1.1rem; line-height: 1.5; color: {p["text"]}; margin: 0 0 4px; }}
+.dc-lead b {{ color: {p["accent_text"]}; }}
+.dc-hero-sub {{ font-family: 'Source Sans Pro', 'Source Sans 3', system-ui, sans-serif; font-size: 1rem; color: {p["muted"]}; }}
+/* Aviso de contexto: demostración, cómo se ordena. Discreto, sin color de alerta. */
+.dc-note {{ background: {p["surface"]}; border: 1px solid {p["line"]}; border-left: 4px solid {p["accent"]};
+  border-radius: 10px; padding: 10px 14px; color: {p["muted"]}; font-size: 0.9rem; line-height: 1.45; margin: 4px 0 12px; }}
+.dc-note b {{ color: {p["text"]}; }}
+
+/* Foco visible para teclado en todo lo que se puede accionar */
+button:focus-visible, [role="tab"]:focus-visible, [role="radio"]:focus-visible, summary:focus-visible,
+input:focus-visible, [data-baseweb="select"] :focus-visible {{ outline: 3px solid {p["accent"]} !important; outline-offset: 2px; }}
+
+/* Transiciones discretas al aparecer contenido; nada continuo */
+@keyframes dc-in {{ from {{ opacity: 0; transform: translateY(4px); }} to {{ opacity: 1; transform: none; }} }}
+.dc-card, .dc-seller, .st-key-dc-inspector, .dc-lift {{ animation: dc-in .22s ease-out both; }}
+@media (prefers-reduced-motion: reduce) {{
+  *, *::before, *::after {{ animation: none !important; transition: none !important; scroll-behavior: auto !important; }}
+}}
 
 /* Pestañas: pedidos a revisar y vendedores recomendados */
 .st-key-dc-tabs [data-baseweb="tab"] p {{ font-size: 1rem; font-weight: 600; color: {p["muted"]}; }}
@@ -149,11 +167,9 @@ h1, h2, h3, .dc-serif {{ font-family: Georgia, 'Times New Roman', serif; letter-
 
 /* Tarjetas de nivel */
 .dc-card {{ background: {p["surface"]}; border: 1px solid {p["line"]}; border-left: 6px solid var(--lvl);
-  border-radius: 12px; padding: 14px 16px; height: 100%; box-shadow: {p["shadow_soft"]};
-  transition: transform .18s ease, box-shadow .18s ease; }}
-.dc-card:hover {{ transform: translateY(-2px); box-shadow: {p["shadow_hover"]}; }}
+  border-radius: 12px; padding: 12px 16px; height: 100%; box-shadow: {p["shadow_soft"]}; }}
 .dc-card .t {{ font-weight: 600; color: {p["text"]}; font-size: 0.95rem; }}
-.dc-card .n {{ font-family: Georgia, serif; font-size: 2rem; color: {p["text"]}; line-height: 1.2; }}
+.dc-card .n {{ font-family: Georgia, serif; font-size: 1.7rem; color: {p["text"]}; line-height: 1.2; }}
 .dc-card .p {{ color: {p["muted"]}; font-size: 0.9rem; }}
 .dc-card .a {{ color: {p["text"]}; font-size: 0.88rem; margin-top: 8px; }}
 
@@ -164,7 +180,8 @@ h1, h2, h3, .dc-serif {{ font-family: Georgia, 'Times New Roman', serif; letter-
 .dc-lift .t {{ font-weight: 600; color: {p["text"]}; margin-top: 2px; }}
 .dc-lift .s {{ color: {p["muted"]}; font-size: 0.85rem; margin-top: 6px; }}
 
-/* Inspector de pedido */
+/* Inspector de pedido: arriba, a la par de la tabla, sin estirar la columna de la tabla */
+[data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-dc-inspector) {{ align-items: flex-start; }}
 .st-key-dc-inspector {{ background: {p["surface"]}; border: 1px solid {p["line"]}; border-radius: 14px;
   padding: 18px 18px 14px; box-shadow: {p["shadow_card"]}; gap: 0.6rem; }}
 .dc-eyebrow {{ font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: {p["muted"]}; }}
@@ -184,6 +201,19 @@ h1, h2, h3, .dc-serif {{ font-family: Georgia, 'Times New Roman', serif; letter-
 .dc-facts > div:last-child {{ border-bottom: 0; }}
 .dc-facts small {{ color: {p["muted"]}; font-size: 0.8rem; }}
 .dc-facts b {{ font-family: Georgia, serif; font-size: 1rem; color: {p["text"]}; white-space: nowrap; }}
+.dc-facts-grid {{ display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }}
+.dc-facts-grid > div {{ flex-direction: column; align-items: flex-start; gap: 0; padding: 6px 0; }}
+.dc-facts-grid > div:nth-last-child(-n+2) {{ border-bottom: 0; }}
+
+/* Vendedores destacados: tarjetas informativas (no se pulsan) */
+.dc-seller {{ background: {p["surface"]}; border: 1px solid {p["line"]}; border-top: 5px solid var(--lvl);
+  border-radius: 12px; padding: 12px 14px; box-shadow: {p["shadow_soft"]}; height: 100%; }}
+.dc-seller-top {{ display: flex; justify-content: space-between; align-items: center; gap: 8px; }}
+.dc-rank {{ font-family: Georgia, serif; font-size: 1.15rem; color: {p["text"]}; }}
+.dc-seller-id {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.78rem;
+  color: {p["muted"]}; word-break: break-all; margin: 8px 0 4px; }}
+.dc-seller .dc-facts > div {{ padding: 5px 0; }}
+.dc-seller .dc-facts b {{ white-space: normal; text-align: right; }}
 
 /* Factores: chip + mini barra de impacto */
 .dc-sec {{ display: flex; align-items: baseline; justify-content: space-between; gap: 8px;

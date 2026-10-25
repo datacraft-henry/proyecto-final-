@@ -14,7 +14,7 @@ Cada pedido recibe un **nivel**:
 |---|---|---|
 | 🔴 Alto | Los pedidos más riesgosos (pensado para el 5 %; en el período de test marca el 11 %) | **Revisar hoy:** confirmar que el vendedor despachó y, si el envío va tarde, avisar al cliente antes de que reclame |
 | 🟡 Medio | Los siguientes en riesgo (pensado para el 15 %; en test marca el 22 %) | **Seguir de cerca:** revisar el seguimiento si se acerca la fecha prometida |
-| 🟢 Bajo | El resto | **Sin acción** |
+| 🟢 Bajo | El resto | **Seguimiento habitual** |
 
 **Lo que hay que saber antes de usarlo:**
 
@@ -117,9 +117,9 @@ El detalle de cada campo, un ejemplo completo con `curl` y los 3 pedidos reales 
 
 ## 4. Vendedores recomendados
 
-En la app, la pestaña **Vendedores recomendados** responde a qué vendedor conviene comprarle: se elige la categoría del producto y el estado del cliente, y se ven los 3 vendedores que ya vendieron ahí con menor riesgo de retraso según el clasificador, con su precio mediano. La primera vez que se abre tarda cerca de un minuto.
+En la app, la pestaña **Vendedores recomendados** responde a qué vendedor conviene comprarle: se elige la categoría del producto y el estado del cliente, y se ven en tarjetas los 3 vendedores que ya vendieron ahí con menor puntaje de riesgo, con su precio histórico de referencia (no es el precio actual). Categoría y destino solo filtran candidatos: el orden sale del historial completo de cada vendedor. Es una ayuda para revisar opciones; no reemplaza confirmar producto, stock, precio y plazo. La primera vez que se abre tarda cerca de un minuto.
 
 - **Se retrasan menos frente a lo que prometen, no entregan más rápido:** en parte recomienda a quien promete más días.
-- Debajo está cuánto ayuda en test frente a recomendar por historial, por popularidad o al azar. Frente al historial y a la popularidad, la diferencia no es significativa.
+- Debajo, "Qué encontramos al evaluar las recomendaciones" compara con elegir por historial, por popularidad o al azar. Supera al azar, pero frente al historial y a la popularidad la diferencia no es significativa. Precision, recall e intervalos están en "Evaluación técnica — para el jurado".
 
 Cómo recomienda y sus límites: [`docs/recomendador.md`](recomendador.md).

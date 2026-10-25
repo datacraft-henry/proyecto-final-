@@ -11,7 +11,9 @@ from app.vista import (
     impact_weights,
     late_summary,
     lift_high,
+    main_view,
     one_in,
+    open_order,
     order_exists,
     plural,
     table_height,
@@ -63,6 +65,26 @@ def test_table_view_scores_from_0_to_100_and_shows_real_delay_on_demand(scored):
     assert list(view["Puntaje"]) == [62, 35, 8, 5]
     assert "¿Se retrasó?" not in view.columns
     assert list(table_view(scored, show_real=True)["¿Se retrasó?"]) == ["Sí", "No", "No", "No"]
+
+
+def test_main_view_is_short_and_marks_the_open_order(scored):
+    view = main_view(scored, show_real=False, open_id="abd456")
+    assert list(view.columns) == [" ", "Prioridad", "Puntaje", "Pedido", "Destino", "Plazo prometido"]
+    assert list(view[" "]) == ["", "▶", "", ""]
+    assert list(view["Prioridad"]) == ["🔴 Alto", "🟡 Medio", "🟢 Bajo", "🟢 Bajo"]
+    assert list(view["Pedido"]) == list(scored["order_id"])
+    assert list(main_view(scored, True, None)["¿Se retrasó? (histórico)"]) == ["Sí", "No", "No", "No"]
+
+
+def test_open_order_follows_the_order_id_not_the_row(scored):
+    # Elegido en la tabla actual.
+    assert open_order(scored, 2, "ABC123") == ("xyz789", "fila")
+    # Al reordenar o filtrar, el pedido elegido antes sigue abierto aunque cambie de fila.
+    reordered = scored.iloc[::-1].reset_index(drop=True)
+    assert open_order(reordered, None, "abd456") == ("abd456", "antes")
+    # Si ya no está en la lista, se abre el primero.
+    assert open_order(filter_orders(scored, "bajo", ""), None, "ABC123") == ("xyz789", "primero")
+    assert open_order(scored, 99, None) == ("ABC123", "primero")
 
 
 def test_table_height_fits_the_rows_up_to_a_cap():
