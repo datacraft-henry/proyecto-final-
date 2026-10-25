@@ -1,58 +1,95 @@
-# Prototipo: recomendar vendedores según riesgo de retraso
+# Sistema de recomendación: vendedores según riesgo de retraso
 
-Es el tercer uso de la misma señal de riesgo de la propuesta del 7 de octubre ("una señal, tres usos"): logística vigila los pedidos de riesgo alto (hecho), quien define las promesas ajusta los días por ruta (propuesto) y, antes de comprar, el cliente ve los vendedores con menos retraso al mismo precio (este prototipo). **Es un prototipo de visión, no parte del producto:** no usa el modelo ni cambia la app o la API.
+Es el segundo producto de la misma señal de riesgo. El clasificador sirve a logística después de aprobar el pago (qué pedidos vigilar); el recomendador sirve al cliente antes de comprar: **en la categoría que busca y para su estado, le muestra los vendedores con menor riesgo de retraso**, según el mismo clasificador. Decisión 12 en `docs/decisiones.md`.
 
-## Por qué es un prototipo y no parte de la app
+## El enfoque: recomendación contextual para clientes sin historial
 
-- **Es otro usuario y otro momento.** La app sirve a operaciones después de aprobar el pago: qué pedidos vigilar. Este prototipo sirve al cliente antes de comprar: a qué vendedor comprarle.
-- **No usa el modelo.** Ordena a los vendedores por su tasa de retraso histórica, no por la predicción calibrada. No pasó por la validación temporal, la calibración ni la elección de modelos que respaldan la app.
-- **La evidencia es observacional.** Que los vendedores de menor riesgo se retrasen menos no prueba que recomendarlos reduzca el retraso. Para eso hace falta una prueba A/B.
-- **Los datos no alcanzan para un producto.** Solo vemos lo que se vendió, no qué vendedores ofrecían cada producto. Solo el 63 % de los pedidos de 2018 tiene un vendedor con historial, y 7 de cada 10 retrasos ocurren en el transporte (ver "Límites").
-- **Queda como prototipo hasta que el PO confirme el alcance.** La propuesta de "una señal, tres usos" lo incluye como tercer uso; integrarlo al producto es una decisión de alcance que se registra en docs/decisiones.md.
-- **No arriesga el producto.** Al estar aparte, si algo falla aquí, la app, la API y sus tests no se ven afectados.
+La consigna pide recomendar según el historial del usuario, pero en Olist el 96,9 % de los clientes compra una sola vez (`customer_unique_id`): todos son clientes de **arranque en frío** (*cold start*). Sin historial por cliente no hay filtrado colaborativo posible. La técnica para ese caso es la **recomendación contextual**: se recomienda según el contexto de la compra.
 
-Por eso vive en `prototipos/`: para mostrar la visión de "una señal, tres usos" y los datos que harían falta para construirla de verdad.
+| Pieza | En este sistema |
+|---|---|
+| Contexto | Categoría del producto y estado de destino del cliente |
+| Lo que se recomienda | Vendedores que ya vendieron esa categoría a ese estado |
+| Criterio (modelo) | Riesgo de retraso medio que el clasificador predice para los pedidos del vendedor |
+| Baselines | Popularidad (los vendedores con más pedidos, el baseline clásico de arranque en frío) e historial (su tasa de retraso suavizada) |
+| Referencia | Azar entre los mismos candidatos |
 
-## Cómo correrlo
+## Por qué recomendar por retraso
 
-Desde la raíz del repo, con los 9 CSV en `data/raw/`:
+**El retraso es lo que más daña la reseña.** De las reseñas de pedidos que llegaron tarde, el 53,7 % es de 1 estrella, contra 6,6 % de los que llegaron a tiempo (nota media 2,27 contra 4,29; 6.406 y 89.681 reseñas). Recomendar vendedores que se retrasan menos apunta a ese KPI: la satisfacción del cliente.
 
-```bash
-streamlit run prototipos/recomendador_vendedores.py
-python -m pytest tests/test_recomendador.py
-```
+**Sobre la recompra, la señal es débil.** En Olist casi nadie vuelve a comprar, llegue o no a tiempo. Tomamos el primer pedido de cada cliente, con seguimiento completo:
 
-## Cómo ordena a los vendedores
+| Primer pedido | Clientes | Recompra a 6 meses | Ajustada por estado |
+|---|---|---|---|
+| A tiempo | 51.526 | 2,9 % | 2,9 % |
+| Tarde | 3.668 | 2,5 % | 2,7 % |
+
+Primeros pedidos comprados hasta el 28/02/2018. Quien recibe tarde vuelve algo menos (riesgo relativo 0,85), pero la diferencia es de 0,4 puntos con un IC 95 % de −1,0 a +0,1: no es concluyente, y se achica al ajustar por estado. A un año (primeros pedidos hasta el 31/08/2017) da 4,4 % contra 3,3 % (IC 95 % de −2,3 a +0,3 puntos; 747 clientes con primer pedido tarde).
+
+- **Sí se puede decir:** el retraso daña la satisfacción, y los clientes con un primer pedido tardío además recompran algo menos. Medir si recomendar vendedores puntuales mejora la recompra es el objetivo de la prueba A/B.
+- **No se puede decir:** que los clientes compran una sola vez porque Olist se demora. El 97 % de los que recibieron a tiempo tampoco volvió.
+
+## Cómo recomienda
 
 `src/recomendador.py`:
 
-1. **Pedidos de un solo vendedor** (94.931 de los 96.203 con target), para atribuir el retraso sin ambigüedad. El target es el del proyecto (`build_target`, decisión 2).
-2. **Historial antes del corte** (compras de 2017): tasa de retraso de cada vendedor con al menos 10 pedidos (641 vendedores).
-3. **Puntaje suavizado:** `(retrasos + 20 × tasa media) / (pedidos + 20)`, con una tasa media de 5,7 %. Sin suavizar, un vendedor con 0 % en 10 pedidos quedaría primero por suerte.
-4. **Medición después del corte** (compras de 2018), con pedidos que no se usaron para ordenar. Un test comprueba que cambiar lo que pasó en 2018 no mueve el puntaje.
+1. **Pedidos de un solo vendedor** (94.931 de los 96.203 con target), para atribuir el retraso sin ambigüedad.
+2. **Riesgo de cada pedido:** `prob_retraso` del clasificador calibrado y congelado (`models/modelo_principal_calibrado.joblib`, `predict_risk`). No se reentrena nada.
+3. **Historial hasta el inicio del test** (27/05/2018, el mismo corte del clasificador): por vendedor con al menos 10 pedidos, su riesgo medio predicho (`puntaje_vendedores`). Son 987 vendedores.
+4. **Recomendación** (`recomendar`): de los vendedores que ya vendieron esa categoría a ese estado, los K de menor riesgo medio, con su precio mediano y cuántas veces vendieron ahí. Es la función que usa la pestaña de la app.
+5. **Medición en el período de test** (27/05 al 29/08/2018), que ni el clasificador ni el historial vieron (`evaluar_recomendacion`).
 
-## Resultado
+El clasificador no usa la identidad del vendedor: su riesgo resume cómo son los pedidos de ese vendedor (plazo prometido, distancia al cliente, si vende fuera de su estado, peso, flete). En test, dentro de cada categoría y estado, los 3 recomendados **prometen plazos algo más largos** (mediana de 27,1 días contra 25,3 de todos los candidatos), están **a la misma distancia** del cliente (831 contra 837 km) y **no son más caros** (precio mediano de R$ 121 contra R$ 131). Su orden se parece poco al de la tasa histórica (correlación de Spearman de 0,14): miden cosas distintas.
 
-Pedidos de 2018, por tercio del puntaje del vendedor:
+## Resultado: Precision@K y Recall@K en test
 
-| Tercio | Retraso en 2018 | Ajustado por estado del cliente | Precio mediano |
-|---|---|---|---|
-| Menor riesgo | 6,7 % | 6,7 % | R$ 69,90 |
-| Medio | 8,0 % | 8,1 % | R$ 78,00 |
-| Mayor riesgo | 9,9 % | 9,8 % | R$ 69,99 |
+En cada combinación de categoría y estado del cliente se muestran K vendedores con cada criterio:
 
-El orden de 2017 se sostiene en 2018, no se explica por la geografía del cliente y los vendedores de menor riesgo no son más caros. Con un mínimo de 5 o 20 pedidos, o sin suavizar, da casi lo mismo (6,6–6,9 % contra 9,8–9,9 %).
+- **Candidatos:** los vendedores con historial que vendieron en esa combinación en test, con al menos 5 pedidos en test. Solo cuentan las combinaciones con al menos 2K candidatos.
+- **Vendedor bueno:** en test se retrasó menos que la media del test (3,5 %).
+- **Precision@K:** de los K mostrados, qué parte es buena. **Recall@K:** de los buenos disponibles, qué parte quedó entre los K.
+- **Retraso de los mostrados:** la tasa de retraso en test de los K vendedores, promediada por vendedor. Es lo que vive el cliente, sin el umbral de "bueno".
 
-La propuesta del 7 de octubre decía 6,4 % contra 8,3 %, con un método que no quedó documentado. Las cifras de este documento son las que reproduce el código.
+Con K = 3 (211 combinaciones, mediana de 11 candidatos):
+
+| Criterio | Precision@3 | Recall@3 | Retraso de los mostrados | Diferencia con el azar (IC 95 %) |
+|---|---|---|---|---|
+| **Clasificador (recomendador)** | **71,2 %** | **28,3 %** | **2,57 %** | **−0,58 pp (−0,85 a −0,31)** |
+| Historial | 69,8 % | 28,4 % | 2,79 % | −0,35 pp (−0,64 a −0,06) |
+| Popularidad | 69,4 % | 27,7 % | 2,75 % | −0,40 pp (−0,61 a −0,19) |
+| Azar | 66,1 % | 27,0 % | 3,14 % | — |
+
+Con K = 5 (128 combinaciones, mediana de 17): Precision@5 de 73,4 % con el clasificador, contra 68,9 % historial, 68,1 % popularidad y 66,6 % azar; retraso de los mostrados de 2,45 % contra 2,78 %, 2,93 % y 3,13 %. Todo se reproduce con `python -m src.recomendador`.
+
+**Cómo leerlo:** el cliente que compra a los 3 recomendados vive un retraso de 2,6 % contra 3,1 % al azar, un riesgo relativo de 0,82. El clasificador es el mejor de los tres criterios, pero **no se distingue del historial**: la diferencia es de −0,23 pp con un IC 95 % de −0,59 a +0,12. Es un efecto real pero modesto, y es lo esperable: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor (ver "Límites").
+
+**Con todo 2018 el historial también ordena.** Ordenando con 2017 y midiendo en 2018 (enero a agosto), el tercio de vendedores de menor riesgo histórico se retrasa 6,7 % y el de mayor 9,9 %, también dentro del mismo estado del cliente (6,7 % contra 9,8 %), y los de menor riesgo no son más caros (precio mediano de R$ 69,90 contra R$ 69,99; `tercios_despues_del_corte`). El clasificador no se compara en ese período porque ya vio esos meses al entrenar.
 
 ## Límites
 
+- **Recomienda en parte a quien promete más días.** Los recomendados prometen unos 2 días más: se retrasan menos frente a su promesa, pero el cliente puede esperar más. Lo que se recomienda es cumplir lo prometido, no entregar más rápido.
+- **El efecto es modesto y no supera al historial.** En test el recomendador baja el retraso de los mostrados en 0,6 puntos frente al azar, y su ventaja sobre el historial no es significativa.
 - **El vendedor explica solo una parte del retraso.** De los pedidos que llegaron tarde, solo el 27,7 % tuvo un vendedor que entregó a la transportadora después de su plazo límite (`shipping_limit_date`). En los otros 7 de cada 10, el retraso ocurrió en el transporte. Cuando el vendedor despacha tarde, el pedido llega tarde el 21,1 % de las veces, contra 5,4 % cuando despacha a tiempo. La fecha de despacho se usa solo para este diagnóstico: es posterior a la compra y nunca entra al modelo (decisión 4).
-- **Funciona en promedio, no vendedor por vendedor.** Un vendedor con 0 % en 2017 puede tener más de 25 % en 2018.
-- **Cobertura parcial:** 63 % de los pedidos de 2018 tiene un vendedor con historial. Los nuevos no se pueden ordenar.
-- **Solo vemos lo vendido,** no qué vendedores ofrecían el mismo producto, a qué precio ni con qué stock.
-- **Es observacional.** Los clientes no eligieron vendedor al azar; ajustar por el estado del cliente no cambia el resultado, pero puede haber otras diferencias (tipo de producto, ruta). El efecto de recomendar se mediría con una prueba A/B.
+- **El test es corto y de bajo retraso.** 95 días con 3,5 % de retraso: pocos eventos por vendedor, y la medición es ruidosa.
+- **El umbral de "bueno" es nuestro.** Por eso también reportamos el retraso de los mostrados, que no depende de él.
+- **Los candidatos no son el catálogo.** Son los que vendieron en test, no los que ofrecían el producto (ese dato no está). Saber quién vendió en test es una ventaja que la operación real no tendría.
+- **Combinaciones no independientes.** Un vendedor grande aparece en varias; los IC por bootstrap de combinaciones son optimistas.
+- **Promedio por vendedor, no por pedido.** Un vendedor con 5 pedidos pesa igual que uno con 500.
+- **Cobertura parcial:** el 73 % de los pedidos de test tiene un vendedor con al menos 10 pedidos de historial. Los vendedores nuevos no se pueden recomendar.
+- **Es observacional.** Los clientes no eligieron vendedor al azar. El efecto de recomendar se mediría con una prueba A/B.
 - **Datos de 2017–2018.**
+
+## Cómo correrlo
+
+Desde la raíz del repo, con los 9 CSV en `data/raw/` y el modelo generado (`python -m src.umbral`):
+
+```bash
+python -m src.recomendador                 # todas las cifras de este documento
+python -m pytest tests/test_recomendador.py
+```
+
+La app de `prototipos/recomendador_vendedores.py` muestra el baseline de historial y queda hasta que la pestaña de recomendación de la app principal la reemplace.
 
 ## Qué datos necesitaríamos de Olist
 

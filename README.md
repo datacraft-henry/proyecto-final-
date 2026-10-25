@@ -4,7 +4,7 @@ Proyecto de ciencia de datos orientado a estimar el riesgo de retraso en las ent
 
 **Misión de DataCraft:** convertir los datos que una empresa ya tiene en decisiones que su equipo pueda tomar hoy, con modelos honestos sobre lo que saben y lo que no.
 
-**Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, monitoreo del nivel alto, app de Streamlit, API (por variables y por `order_id`), Docker, tests automáticos en GitHub Actions, manual de usuario y prototipo de recomendación de vendedores. En curso: tablero de Power BI, informe final y presentación.
+**Estado:** Sprint 2 (cierre y demo el 28 de octubre de 2026). Listos: base de datos, EDA, target único, modelo principal calibrado con niveles de riesgo, monitoreo del nivel alto, app de Streamlit, API (por variables y por `order_id`), Docker, tests automáticos en GitHub Actions, manual de usuario y sistema de recomendación de vendedores. En curso: tablero de Power BI, informe final y presentación.
 
 ## Índice
 
@@ -51,7 +51,7 @@ El proyecto cubre:
 - Evaluar la detección de retrasos y la generación de falsas alertas.
 - Desarrollar una app en Streamlit y una API de predicción.
 
-La misma señal de riesgo también sirve para recomendar vendedores con menos retraso histórico. Ese uso queda como **prototipo**, aparte del producto, hasta que el PO confirme el alcance (`docs/recomendador.md`).
+La misma señal de riesgo alimenta el **sistema de recomendación**: antes de comprar, en la categoría que busca y para su estado, el cliente ve los vendedores con menor riesgo de retraso según el clasificador. Como el 97 % de los clientes de Olist compra una sola vez, la recomendación es contextual y no por historial del cliente (decisión 12, `docs/recomendador.md`).
 
 Quedan fuera del alcance la recomendación de acciones para aumentar ventas y la predicción de cancelaciones.
 
@@ -149,6 +149,19 @@ Modelo final: regresión logística, reentrenada con train + validación y calib
 
 Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para **priorizar** el seguimiento, no para predecir con certeza qué pedido se va a retrasar: lo confiable es el orden y el nivel, no la probabilidad exacta. Fuente: `docs/metricas_evaluacion.md` y `docs/decisiones_modelos.md`.
 
+### Sistema de recomendación
+
+Recomienda 3 vendedores por categoría y estado del cliente, ordenados por el riesgo medio que el clasificador predice para sus pedidos. Medido en el mismo período de test (211 combinaciones):
+
+| Criterio | Precision@3 | Recall@3 | Retraso de los recomendados |
+|---|---|---|---|
+| **Clasificador (recomendador)** | **71,2 %** | **28,3 %** | **2,57 %** |
+| Historial del vendedor | 69,8 % | 28,4 % | 2,79 % |
+| Popularidad (baseline) | 69,4 % | 27,7 % | 2,75 % |
+| Azar | 66,1 % | 27,0 % | 3,14 % |
+
+Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (IC 95 % de la diferencia: −0,85 a −0,31 pp). El efecto es modesto y no se distingue del historial: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor. Fuente: `docs/recomendador.md`.
+
 ## Dónde está cada entregable
 
 | Entregable | Dónde |
@@ -169,7 +182,7 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | Unificación y esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) · [`src/unificacion.py`](src/unificacion.py) |
 | Manual de usuario (app y API) | [`docs/manual_usuario.md`](docs/manual_usuario.md) |
 | Tests (anti-fuga, target, calibración, app, API y recomendador), corridos en cada PR | [`tests/`](tests/) · [`.github/workflows/tests.yml`](.github/workflows/tests.yml) |
-| Prototipo de visión: vendedores según riesgo de retraso | [`prototipos/recomendador_vendedores.py`](prototipos/recomendador_vendedores.py) · [`src/recomendador.py`](src/recomendador.py) · [`docs/recomendador.md`](docs/recomendador.md) |
+| Sistema de recomendación de vendedores | [`src/recomendador.py`](src/recomendador.py) · [`docs/recomendador.md`](docs/recomendador.md) · [`prototipos/recomendador_vendedores.py`](prototipos/recomendador_vendedores.py) (vista del baseline de historial) |
 
 ## Estructura del repositorio
 
@@ -185,7 +198,7 @@ Revisando 1 de cada 9 pedidos se llega a 1 de cada 4 retrasos. Es un modelo para
 | `app/` | App de riesgo por pedido en Streamlit |
 | `api/` | API de predicción (FastAPI) |
 | `docs/` | Decisiones del equipo, métricas y aportes |
-| `prototipos/` | Prototipos de visión, aparte del producto (recomendación de vendedores) |
+| `prototipos/` | App que muestra el baseline de historial del recomendador, hasta que la reemplace la pestaña de la app |
 | `reports/` | Gráficos y resultados |
 | `models/` | Modelos entrenados, locales y excluidos de Git |
 | `Dockerfile` | Imagen de la API |
@@ -250,6 +263,9 @@ docker run -p 8000:8000 -v "$(pwd)/models:/app/models" -v "$(pwd)/data/raw:/app/
 
 # 10. Sacar 3 pedidos reales del test para probar la API (reports/demo_pedidos.json)
 python -m scripts.demo_pedidos
+
+# 11. Evaluar el sistema de recomendación (Precision@K y Recall@K en test)
+python -m src.recomendador
 ```
 
 Los notebooks se abren con Jupyter desde la raíz del repo (`jupyter notebook`) o desde Visual Studio Code.
@@ -291,7 +307,7 @@ El detalle y las decisiones del equipo están en [`docs/decisiones.md`](docs/dec
 - [x] Monitorear el volumen del nivel de riesgo alto (`src/monitoreo.py`).
 - [x] Predecir por `order_id` desde la API (`docs/api.md`).
 - [x] Correr los tests en cada PR con GitHub Actions (`.github/workflows/tests.yml`).
-- [x] Prototipo de recomendación de vendedores (`docs/recomendador.md`).
+- [x] Sistema de recomendación de vendedores con el clasificador, medido con Precision@K (`docs/recomendador.md`).
 - [x] Escribir el manual de usuario (`docs/manual_usuario.md`).
 - [ ] Escribir el informe final y preparar la defensa.
 
@@ -305,6 +321,6 @@ Proyecto final de Data Science de Henry, desarrollado por el equipo **DataCraft*
 | Cristian Atrio | Data Scientist | Entorno y repositorio, baseline, features, validación temporal, modelo principal, monitoreo, app de Streamlit y GitHub Actions |
 | Alexis Sircelj | Data Scientist | Base de datos, esquema estrella para Power BI y EDA con gráficos |
 | Mathias Chaparro | Data Scientist | Exploración del target, control de fuga y auditoría de datos |
-| María Camila Uribe Noreña | Data Scientist | Período de estudio, base en BigQuery, calibración y niveles de riesgo, API, Docker y prototipo de recomendación de vendedores |
+| María Camila Uribe Noreña | Data Scientist | Período de estudio, base en BigQuery, calibración y niveles de riesgo, API, Docker y sistema de recomendación de vendedores |
 
 Proyecto educativo y de prototipado.
