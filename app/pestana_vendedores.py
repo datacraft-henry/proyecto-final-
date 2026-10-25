@@ -69,6 +69,7 @@ def get_recommender(_artifact: dict) -> dict:
         "n_combos": len(evaluation),
         "vs_random": ic_diferencia(evaluation, "clasificador", "azar"),
         "vs_history": ic_diferencia(evaluation, "clasificador", "historial"),
+        "vs_popularity": ic_diferencia(evaluation, "clasificador", "popularidad"),
         "seller_state": tables["sellers"].set_index("seller_id")["seller_state"],
         "names": names,
     }
@@ -191,17 +192,16 @@ def show_evaluation(rec: dict) -> None:
         unsafe_allow_html=True,
     )
     st.dataframe(tabla_metricas(rec["metrics"]), width="stretch")
-    vs_history = rec["vs_history"]
-    verdict = (
-        "La diferencia es significativa."
-        if es_significativa(vs_history)
-        else "La diferencia no es significativa: en estos datos, recomendar con el clasificador no se distingue "
-        "de recomendar por historial."
-    )
-    st.markdown(
-        f"- **Frente al azar**, el retraso de los mostrados cambia {texto_diferencia(rec['vs_random'])}.\n"
-        f"- **Frente al historial**, cambia {texto_diferencia(vs_history)}. {verdict}"
-    )
+    lines = [f"- **Frente al azar**, el retraso de los mostrados cambia {texto_diferencia(rec['vs_random'])}."]
+    for name, key in (("historial", "vs_history"), ("popularidad", "vs_popularity")):
+        ic = rec[key]
+        verdict = (
+            "La diferencia es significativa."
+            if es_significativa(ic)
+            else f"La diferencia no es significativa: no se distingue de recomendar por {name}."
+        )
+        lines.append(f"- **Frente a la {name}**, cambia {texto_diferencia(ic)}. {verdict}")
+    st.markdown("\n".join(lines))
 
 
 def show_sellers_help(cut: pd.Timestamp) -> None:
