@@ -40,7 +40,7 @@ Primeros pedidos comprados hasta el 28/02/2018. Quien recibe tarde vuelve algo m
 4. **Recomendación** (`recomendar`): de los vendedores que ya vendieron esa categoría a ese estado, los K de menor riesgo medio, con su precio mediano y cuántas veces vendieron ahí. Es la función que usa la pestaña de la app.
 5. **Medición en el período de test** (27/05 al 29/08/2018), que ni el clasificador ni el historial vieron (`evaluar_recomendacion`).
 
-El clasificador no usa la identidad del vendedor: su riesgo resume cómo son los pedidos de ese vendedor (plazo prometido, distancia al cliente, si vende fuera de su estado, peso, flete). En test, dentro de cada categoría y estado, los 3 recomendados **prometen plazos algo más largos** (mediana de 27,1 días contra 25,3 de todos los candidatos), están **a la misma distancia** del cliente (831 contra 837 km) y **no son más caros** (precio mediano de R$ 121 contra R$ 131). Su orden se parece poco al de la tasa histórica (correlación de Spearman de 0,14): miden cosas distintas.
+El clasificador no usa la identidad del vendedor: su riesgo resume cómo son los pedidos de ese vendedor (plazo prometido, distancia al cliente, si vende fuera de su estado, peso, flete). En test, dentro de cada categoría y estado, los 3 recomendados **prometen unos 2 días más** que el resto de los candidatos, están **a la misma distancia** del cliente y **no son más caros**. Su orden se parece poco al de la tasa histórica: miden cosas distintas.
 
 ## Resultado: Precision@K y Recall@K en test
 
@@ -55,21 +55,21 @@ Con K = 3 (211 combinaciones, mediana de 11 candidatos):
 
 | Criterio | Precision@3 | Recall@3 | Retraso de los mostrados | Diferencia con el azar (IC 95 %) |
 |---|---|---|---|---|
-| **Clasificador (recomendador)** | **71,2 %** | **28,3 %** | **2,57 %** | **−0,58 pp (−0,85 a −0,31)** |
+| **Clasificador (recomendador)** | **71,1 %** | **28,0 %** | **2,58 %** | **−0,56 pp (−0,84 a −0,29)** |
 | Historial | 69,8 % | 28,4 % | 2,79 % | −0,35 pp (−0,64 a −0,06) |
 | Popularidad | 69,4 % | 27,7 % | 2,75 % | −0,40 pp (−0,61 a −0,19) |
 | Azar | 66,1 % | 27,0 % | 3,14 % | — |
 
-Con K = 5 (128 combinaciones, mediana de 17): Precision@5 de 73,4 % con el clasificador, contra 68,9 % historial, 68,1 % popularidad y 66,6 % azar; retraso de los mostrados de 2,45 % contra 2,78 %, 2,93 % y 3,13 %. Todo se reproduce con `python -m src.recomendador`.
+Con K = 5 (128 combinaciones, mediana de 17): Precision@5 de 73,4 % con el clasificador, contra 68,9 % historial, 68,1 % popularidad y 66,6 % azar; retraso de los mostrados de 2,46 % contra 2,78 %, 2,93 % y 3,13 %. Todo se reproduce con `python -m src.recomendador`. Las cifras del clasificador son las del equipo de referencia del proyecto: en otra máquina pueden variar en el último decimal, porque la regresión logística se optimiza por iteraciones y cada procesador redondea distinto.
 
-**Cómo leerlo:** el cliente que compra a los 3 recomendados vive un retraso de 2,6 % contra 3,1 % al azar, un riesgo relativo de 0,82. El clasificador es el mejor de los tres criterios, pero **no se distingue del historial**: la diferencia es de −0,23 pp con un IC 95 % de −0,59 a +0,12. Es un efecto real pero modesto, y es lo esperable: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor (ver "Límites").
+**Cómo leerlo:** el cliente que compra a los 3 recomendados vive un retraso de 2,6 % contra 3,1 % al azar, un riesgo relativo de 0,82. Los tres criterios superan al azar. El clasificador tiene el menor retraso, pero **no se distingue ni del historial ni de la popularidad**: frente al historial la diferencia es de −0,21 pp, con un IC 95 % de −0,58 a +0,14, y frente a la popularidad es de −0,17 pp, con un IC 95 % de −0,48 a +0,17. Es un efecto real pero modesto, y es lo esperable: 7 de cada 10 retrasos ocurren en el transporte, no en el vendedor (ver "Límites").
 
 **Con todo 2018 el historial también ordena.** Ordenando con 2017 y midiendo en 2018 (enero a agosto), el tercio de vendedores de menor riesgo histórico se retrasa 6,7 % y el de mayor 9,9 %, también dentro del mismo estado del cliente (6,7 % contra 9,8 %), y los de menor riesgo no son más caros (precio mediano de R$ 69,90 contra R$ 69,99; `tercios_despues_del_corte`). El clasificador no se compara en ese período porque ya vio esos meses al entrenar.
 
 ## Límites
 
 - **Recomienda en parte a quien promete más días.** Los recomendados prometen unos 2 días más: se retrasan menos frente a su promesa, pero el cliente puede esperar más. Lo que se recomienda es cumplir lo prometido, no entregar más rápido.
-- **El efecto es modesto y no supera al historial.** En test el recomendador baja el retraso de los mostrados en 0,6 puntos frente al azar, y su ventaja sobre el historial no es significativa.
+- **El efecto es modesto y no supera a los baselines.** En test el recomendador baja el retraso de los mostrados en 0,6 puntos frente al azar, pero su ventaja sobre el historial y sobre la popularidad no es significativa.
 - **El vendedor explica solo una parte del retraso.** De los pedidos que llegaron tarde, solo el 27,7 % tuvo un vendedor que entregó a la transportadora después de su plazo límite (`shipping_limit_date`). En los otros 7 de cada 10, el retraso ocurrió en el transporte. Cuando el vendedor despacha tarde, el pedido llega tarde el 21,1 % de las veces, contra 5,4 % cuando despacha a tiempo. La fecha de despacho se usa solo para este diagnóstico: es posterior a la compra y nunca entra al modelo (decisión 4).
 - **El test es corto y de bajo retraso.** 95 días con 3,5 % de retraso: pocos eventos por vendedor, y la medición es ruidosa.
 - **El umbral de "bueno" es nuestro.** Por eso también reportamos el retraso de los mostrados, que no depende de él.
