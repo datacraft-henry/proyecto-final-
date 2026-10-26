@@ -7,7 +7,7 @@ python -m src.training            # predice al aprobar la compra (decisión 3)
 python -m pytest
 ```
 
-Escribe `reports/comparacion_modelos.json` y guarda el modelo elegido en `models/modelo_principal.joblib` (los dos ignorados por Git). Tarda menos de un minuto.
+Escribe `reports/comparacion_modelos.json` y guarda el modelo elegido en `models/modelo_principal.joblib` (los dos ignorados por Git). Tarda menos de un minuto. Con `--mlflow` además registra la comparación en MLflow (ver el [README](../README.md#seguimiento-de-experimentos-con-mlflow)).
 
 ## Dataset de modelado
 
