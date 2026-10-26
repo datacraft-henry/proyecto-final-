@@ -32,3 +32,8 @@ venv/
 .agents/
 .DS_Store
 Thumbs.db
+
+# --- MLflow: corridas locales de python -m src.training --mlflow ---
+mlruns/
+mlartifacts/
+mlflow.db

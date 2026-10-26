@@ -175,6 +175,7 @@ Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (I
 | Target único y período de estudio | [`src/target.py`](src/target.py) |
 | Baseline | [`src/baseline.py`](src/baseline.py) · [`docs/decisiones_baseline.md`](docs/decisiones_baseline.md) |
 | Features, comparación de modelos y modelo principal | [`src/feature_engineering.py`](src/feature_engineering.py) · [`src/training.py`](src/training.py) · [`docs/decisiones_modelos.md`](docs/decisiones_modelos.md) |
+| Seguimiento de experimentos con MLflow | [`src/experiment_tracking.py`](src/experiment_tracking.py) · [cómo verlo](#seguimiento-de-experimentos-con-mlflow) |
 | Features del sprint 2 (carga del vendedor y feriados) | [`src/feature_ablation.py`](src/feature_ablation.py) · [`docs/aporte_mathias_features_sprint2.md`](docs/aporte_mathias_features_sprint2.md) |
 | Calibración y niveles de riesgo | [`src/calibration.py`](src/calibration.py) · [`src/umbral.py`](src/umbral.py) · [`src/monitoreo.py`](src/monitoreo.py) |
 | Métricas de evaluación y justificación del modelo | [`docs/metricas_evaluacion.md`](docs/metricas_evaluacion.md) |
@@ -211,6 +212,7 @@ Las carpetas vacías se mantienen con un archivo `.gitkeep`.
 
 - Python, pandas y NumPy.
 - Scikit-learn y joblib.
+- MLflow (seguimiento de experimentos).
 - Matplotlib y Seaborn.
 - Streamlit (app) y FastAPI con Uvicorn (API).
 - Docker.
@@ -245,6 +247,10 @@ python -m pytest
 # 5. Entrenar y comparar modelos (escribe reports/comparacion_modelos.json)
 python -m src.training
 
+# 5b. Lo mismo, registrando parámetros, métricas y artefactos en MLflow
+python -m src.training --mlflow
+python -m mlflow ui          # abrir http://127.0.0.1:5000
+
 # 6. Calibrar y guardar el modelo final (models/modelo_principal_calibrado.joblib)
 python -m src.umbral
 
@@ -270,6 +276,17 @@ python -m src.recomendador
 ```
 
 Los notebooks se abren con Jupyter desde la raíz del repo (`jupyter notebook`) o desde Visual Studio Code.
+
+### Seguimiento de experimentos con MLflow
+
+`python -m src.training --mlflow` corre la misma comparación de modelos y además la deja registrada en MLflow, en el experimento `datacraft-retraso-pedidos`. No cambia el modelo ni las cifras: el reporte y el `.joblib` salen idénticos a una corrida sin `--mlflow`, y el modelo congelado (`models/modelo_principal_calibrado.joblib`) no se toca.
+
+Cada corrida guarda:
+
+- **Corrida padre** (`comparacion_aprobacion`): modelo elegido, umbral de alerta, criterio de selección, período y tamaño de cada cohorte, las métricas del elegido y, como artefactos, `reports/comparacion_modelos.json` y `models/modelo_principal.joblib`.
+- **Una corrida hija por candidato** (`logistica_baseline`, `logistica_seleccion`, `arboles_seleccion`, `arboles_completa`): sus hiperparámetros y cantidad de features, la PR-AUC y ROC-AUC de la validación cruzada (media y cada tramo como un paso), y las métricas de validación y test con la matriz de confusión. La etiqueta `seleccionado` marca el elegido.
+
+Las corridas quedan en `mlflow.db` y `mlruns/` en la raíz del repo (Git las ignora). `python -m mlflow ui` las muestra en http://127.0.0.1:5000, donde se pueden comparar los cuatro candidatos lado a lado.
 
 ## Cómo trabajamos con Git
 

@@ -3,6 +3,7 @@
 Uso (desde la raíz del repo, con los 9 CSV de Kaggle en data/raw):
     python -m src.training
     python -m src.training --anchor compra
+    python -m src.training --mlflow   # además registra la corrida en MLflow
 
 Compara, con las tres cohortes por fecha de src/validation.py::temporal_three_way_split
 (las mismas que src/umbral.py):
@@ -22,6 +23,8 @@ umbral de alerta se fija en validación (5 % de pedidos con más riesgo). Recié
 con el modelo y los umbrales elegidos se calculan las métricas de test: se informan
 para los 4 candidatos, como diagnóstico, pero no cambian la elección.
 Escribe reports/comparacion_modelos.json y guarda el modelo en models/.
+Con --mlflow también registra parámetros, métricas y artefactos en MLflow
+(ver src/experiment_tracking.py); no cambia ningún resultado.
 """
 
 import argparse
@@ -42,6 +45,7 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 
 from src.baseline import make_model as make_baseline_model
 from src.data_loading import RAW_DIR, load_raw_tables
+from src.experiment_tracking import DEFAULT_EXPERIMENT, log_comparison
 from src.feature_engineering import build_model_dataset, load_geolocation, model_feature_lists
 from src.features import (
     ANCHORS,
@@ -238,6 +242,8 @@ def main() -> None:
     parser.add_argument("--raw-dir", type=Path, default=RAW_DIR)
     parser.add_argument("--anchor", choices=list(ANCHORS), default=DEFAULT_ANCHOR)
     parser.add_argument("--output", type=Path, default=Path("reports/comparacion_modelos.json"))
+    parser.add_argument("--mlflow", action="store_true", help="registrar la corrida en MLflow")
+    parser.add_argument("--experiment", default=DEFAULT_EXPERIMENT, help="nombre del experimento de MLflow")
     args = parser.parse_args()
 
     tables = {**load_raw_tables(args.raw_dir), "geolocation": load_geolocation(args.raw_dir)}
@@ -247,13 +253,17 @@ def main() -> None:
     best = report["selected_model"]
     model, columns = fitted[best]
     MODELS_DIR.mkdir(exist_ok=True)
+    model_path = MODELS_DIR / "modelo_principal.joblib"
     joblib.dump(
         {"model": model, "features": columns, "anchor": args.anchor, "threshold": report["selected_threshold"]},
-        MODELS_DIR / "modelo_principal.joblib",
+        model_path,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(report, indent=2, ensure_ascii=False))
+    if args.mlflow:
+        run_id = log_comparison(report, candidate_models(args.anchor), [args.output, model_path], args.experiment)
+        print(f"Corrida registrada en MLflow: {run_id} (verla con: python -m mlflow ui)")
 
 
 if __name__ == "__main__":
