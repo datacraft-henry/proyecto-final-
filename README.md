@@ -294,7 +294,7 @@ Las corridas quedan en `mlflow.db` y `mlruns/` en la raíz del repo (Git las ign
 
 ### App en la web (Streamlit Community Cloud)
 
-La app también está publicada en Streamlit Community Cloud, para abrirla desde el navegador sin instalar nada. Link: **https://soyhenry-datacraft.streamlit.app/**
+La app también está publicada en Streamlit Community Cloud, para abrirla desde el navegador sin instalar nada. Link: **https://soyhenry-datacraft.streamlit.app/** Video de la app funcionando: [`docs/demo/demo_app.mp4`](docs/demo/demo_app.mp4).
 
 En la nube no están los CSV de Kaggle ni el modelo, que no se versionan. Por eso la app tiene un **modo web**: lee tres archivos chicos de `app/datos_web/` (2,6 MB en total) que se generan en la PC que tiene los datos y el modelo congelado, con las mismas funciones que usa la app:
 
