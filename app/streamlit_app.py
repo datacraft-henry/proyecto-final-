@@ -4,9 +4,10 @@ Uso, desde la raíz del repo, con los CSV en data/raw y el modelo generado
 (`python -m src.umbral`):
     streamlit run app/streamlit_app.py
 
-Por ahora arma los pedidos desde los CSV de Kaggle (período de test, los meses
-que el modelo no vio). Cuando esté la API, la app le va a pedir el riesgo a la
-API en lugar de cargar el modelo.
+Arma los pedidos desde los CSV de Kaggle (período de test, los meses que el
+modelo no vio). Publicada en Streamlit Community Cloud, donde no están ni los
+CSV ni el modelo, lee los archivos ya puntuados de app/datos_web/ (modo web,
+ver app/datos_web.py).
 
 La lógica de negocio vive en app/riesgo.py, los helpers de pantalla en
 app/vista.py (pedidos) y app/vendedores.py (vendedores recomendados) y las
@@ -30,9 +31,11 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # para importar src y app
 
+from app.datos_web import contributions_of, load_artifact_info, load_scored_orders, web_mode  # noqa: E402
 from app.estilos import PALETTES, build_css  # noqa: E402
 from app.riesgo import (  # noqa: E402
     SEMAFORO,
+    factors_table,
     format_feature_value,
     load_artifact,
     orders_with_risk,
@@ -95,12 +98,15 @@ THEME_SWITCH = {"light": ("🌙 Oscuro", "Cambiar a modo oscuro"), "dark": ("☀
 
 @st.cache_resource
 def get_artifact() -> dict:
-    return load_artifact()
+    """El modelo calibrado; en modo web, solo con qué se entrenó y los cortes de riesgo."""
+    return load_artifact_info() if web_mode() else load_artifact()
 
 
 @st.cache_data(show_spinner="Preparando los pedidos...")
 def get_orders() -> pd.DataFrame:
     """Pedidos del período de test (los que el modelo no vio), con todas sus variables."""
+    if web_mode():
+        return load_scored_orders()
     tables = {**load_raw_tables(), "geolocation": load_geolocation()}
     dataset = build_model_dataset(tables, get_artifact()["anchor"])
     _, _, test = temporal_three_way_split(dataset)
@@ -109,7 +115,16 @@ def get_orders() -> pd.DataFrame:
 
 @st.cache_data
 def get_scored_orders() -> pd.DataFrame:
+    if web_mode():
+        return get_orders()  # ya vienen puntuados y ordenados
     return orders_with_risk(get_artifact(), get_orders())
+
+
+def get_factors(orders: pd.DataFrame, order_id: str) -> pd.DataFrame:
+    """Qué sube y qué baja el puntaje de un pedido: con el modelo o, en modo web, ya calculado."""
+    if web_mode():
+        return factors_table(*contributions_of(orders, order_id))
+    return risk_factors(get_artifact(), orders, order_id)
 
 
 # ----------------------------------------------------------------------------- tema
@@ -534,7 +549,7 @@ def show_detail(
             + "</div>",
             unsafe_allow_html=True,
         )
-        up, down = impact_weights(risk_factors(get_artifact(), orders, order_id), FACTORS_UP, FACTORS_DOWN)
+        up, down = impact_weights(get_factors(orders, order_id), FACTORS_UP, FACTORS_DOWN)
         with st.expander("Qué sube y qué baja el puntaje"):
             _factor_block("Suben el puntaje", "frente al pedido promedio", up, "up")
             if not down.empty:

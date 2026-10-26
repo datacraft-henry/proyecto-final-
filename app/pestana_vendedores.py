@@ -13,6 +13,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
+from app.datos_web import load_recommender, ranked_sellers, web_mode
 from app.vendedores import (
     TOP_K,
     categorias,
@@ -50,16 +51,14 @@ DEFAULT_CATEGORY, DEFAULT_STATE = "cama_mesa_banho", "RJ"  # la categoría que m
 CHART_ROW = 34  # alto de cada barra del gráfico de la evaluación, en píxeles
 
 
-@st.cache_resource(show_spinner="Calculando el riesgo de los vendedores (la primera vez tarda cerca de un minuto)...")
-def get_recommender(_artifact: dict) -> dict:
-    """Lo que usa la pestaña de vendedores, calculado una vez con src.recomendador.
+def compute_recommender(artifact: dict, tables: dict) -> dict:
+    """Lo que usa la pestaña de vendedores, calculado con src.recomendador.
 
     Pedidos con el riesgo del clasificador, vendedores con puntaje, el corte (inicio del test),
     las combinaciones que se pueden elegir, la evaluación en test frente a los baselines y el
-    diagnóstico de despacho. El artefacto no se hashea (guion bajo): es el mismo modelo en toda la sesión.
+    diagnóstico de despacho. También lo usa app/datos_web.py para generar el modo web.
     """
-    tables = {**load_raw_tables(), "geolocation": load_geolocation()}
-    orders, cut = preparar_clasificador(tables, _artifact)
+    orders, cut = preparar_clasificador(tables, artifact)
     sellers = puntaje_vendedores(orders, cut)
     evaluation = evaluar_recomendacion(orders, sellers, cut, k=TOP_K)
     history = orders[(pd.to_datetime(orders[FECHA_PREDICCION]) < cut) & orders["seller_id"].isin(sellers.index)]
@@ -82,8 +81,26 @@ def get_recommender(_artifact: dict) -> dict:
         "dispatch": retraso_que_empieza_en_el_vendedor(tables),
         "seller_state": tables["sellers"].set_index("seller_id")["seller_state"],
         "names": names,
-        "cuts": _artifact["cuts"],
+        "cuts": artifact["cuts"],
     }
+
+
+@st.cache_resource(show_spinner="Calculando el riesgo de los vendedores (la primera vez tarda cerca de un minuto)...")
+def get_recommender(_artifact: dict) -> dict:
+    """Se calcula una vez. El artefacto no se hashea (guion bajo): es el mismo modelo en toda la sesión.
+
+    En modo web se lee de los archivos ya puntuados (app/datos_web.py) y el artefacto no se usa.
+    """
+    if web_mode():
+        return load_recommender()
+    return compute_recommender(_artifact, {**load_raw_tables(), "geolocation": load_geolocation()})
+
+
+def listed_sellers(rec: dict, category: str, state: str) -> pd.DataFrame:
+    """Todos los vendedores de la combinación, en el orden del recomendador."""
+    if "ranking" in rec:
+        return ranked_sellers(rec["ranking"], category, state)
+    return recomendar(rec["orders"], rec["sellers"], rec["cut"], category, state, k=len(rec["sellers"]))
 
 
 def show_sellers_page(p: dict, artifact: dict) -> None:
@@ -103,7 +120,7 @@ def show_sellers_page(p: dict, artifact: dict) -> None:
         unsafe_allow_html=True,
     )
     category, state = show_sellers_toolbar(rec["combos"], rec["names"])
-    listed = recomendar(rec["orders"], rec["sellers"], cut, category, state, k=len(rec["sellers"]))
+    listed = listed_sellers(rec, category, state)
     st.markdown(
         f'<p class="dc-lead"><b>{texto_vendedores(len(listed))}</b> con historial ya vendieron '
         f"{escape(nombre_categoria(category, rec['names']))} con destino {escape(nombre_estado(state))}. "
