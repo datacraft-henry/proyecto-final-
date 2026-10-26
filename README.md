@@ -180,6 +180,7 @@ Quien compra a los recomendados vive un retraso de 2,6 % contra 3,1 % al azar (I
 | Calibración y niveles de riesgo | [`src/calibration.py`](src/calibration.py) · [`src/umbral.py`](src/umbral.py) · [`src/monitoreo.py`](src/monitoreo.py) |
 | Métricas de evaluación y justificación del modelo | [`docs/metricas_evaluacion.md`](docs/metricas_evaluacion.md) |
 | App de riesgo por pedido | [`app/streamlit_app.py`](app/streamlit_app.py) (pantalla) · [`app/riesgo.py`](app/riesgo.py) (lógica) · [`app/vista.py`](app/vista.py) (filtros y formato) · [`app/estilos.py`](app/estilos.py) (CSS) |
+| App publicada en la web (modo web) | [`app/datos_web.py`](app/datos_web.py) · [`app/datos_web/`](app/datos_web/) · [cómo se publica](#app-en-la-web-streamlit-community-cloud) |
 | API de predicción y Docker | [`api/main.py`](api/main.py) · [`Dockerfile`](Dockerfile) · [`docs/api.md`](docs/api.md) |
 | Pedidos reales para la demo de la API | [`scripts/demo_pedidos.py`](scripts/demo_pedidos.py) · [`docs/api.md`](docs/api.md#pedidos-reales-para-la-demo) |
 | Unificación y esquema estrella para Power BI | [`scripts/unificacion/`](scripts/unificacion/) · [`src/unificacion.py`](src/unificacion.py) |
@@ -260,6 +261,9 @@ python -m src.monitoreo
 # 7. Abrir la app de riesgo por pedido
 streamlit run app/streamlit_app.py
 
+# 7b. Regenerar los archivos ya puntuados de la app web (app/datos_web/), si cambia el modelo
+python -m app.datos_web
+
 # 8. Levantar la API (documentación en http://127.0.0.1:8000/docs)
 uvicorn api.main:app --reload
 
@@ -287,6 +291,20 @@ Cada corrida guarda:
 - **Una corrida hija por candidato** (`logistica_baseline`, `logistica_seleccion`, `arboles_seleccion`, `arboles_completa`): sus hiperparámetros y cantidad de features, la PR-AUC y ROC-AUC de la validación cruzada (media y cada tramo como un paso), y las métricas de validación y test con la matriz de confusión. La etiqueta `seleccionado` marca el elegido.
 
 Las corridas quedan en `mlflow.db` y `mlruns/` en la raíz del repo (Git las ignora). `python -m mlflow ui` las muestra en http://127.0.0.1:5000, donde se pueden comparar los cuatro candidatos lado a lado.
+
+### App en la web (Streamlit Community Cloud)
+
+La app también está publicada en Streamlit Community Cloud, para abrirla desde el navegador sin instalar nada. Link: _se agrega al publicarla_.
+
+En la nube no están los CSV de Kaggle ni el modelo, que no se versionan. Por eso la app tiene un **modo web**: lee tres archivos chicos de `app/datos_web/` (2,6 MB en total) que se generan en la PC que tiene los datos y el modelo congelado, con las mismas funciones que usa la app:
+
+- `pedidos_test.parquet`: los 19.293 pedidos del período de test con su puntaje, su nivel, sus variables y el aporte de cada variable al puntaje.
+- `ranking_vendedores.parquet`: para cada categoría y destino de la pestaña de vendedores, la lista completa en el orden del recomendador.
+- `resumen.json`: la tabla de Precision@K y Recall@K, los intervalos de confianza, el diagnóstico de despacho y los cortes de riesgo.
+
+Las cifras de la web son las mismas que las de la app local. La app entra sola en modo web cuando no encuentra el modelo; para probarlo en la PC, `DATACRAFT_MODO_WEB=1` (en PowerShell, `$env:DATACRAFT_MODO_WEB="1"`) antes de `python -m streamlit run app/streamlit_app.py`. Si el modelo cambia, hay que volver a correr `python -m app.datos_web` y commitear los tres archivos.
+
+Para publicarla: en [share.streamlit.io](https://share.streamlit.io), "Create app" → repositorio `datacraft-henry/proyecto-final-`, rama `main` (o `developer`), archivo `app/streamlit_app.py`, Python 3.10. Usa `app/requirements.txt`, que solo trae lo que la app necesita. Si pasa un rato sin visitas, la app se duerme y tarda cerca de un minuto en despertar.
 
 ## Cómo trabajamos con Git
 
