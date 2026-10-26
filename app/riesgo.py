@@ -140,30 +140,38 @@ def _source_feature(transformed_name: str, features: list[str]) -> str:
     return max(matches, key=len)
 
 
-def risk_factors(artifact: dict, orders: pd.DataFrame, order_id: str) -> pd.DataFrame:
-    """Qué variables suben o bajan el riesgo de un pedido frente al pedido promedio.
+def feature_contributions(artifact: dict, orders: pd.DataFrame) -> pd.DataFrame:
+    """Aporte de cada variable al riesgo de cada pedido, frente al pedido promedio de `orders`.
 
-    Sirve para la regresión logística: el aporte de cada variable es su coeficiente
-    por la diferencia entre el valor del pedido y el promedio de `orders`, en la
-    escala que ve el modelo. Las categorías de una misma variable se suman.
-    Devuelve una fila por variable, de la que más sube el riesgo a la que más lo baja.
+    Sirve para la regresión logística: el aporte es el coeficiente por la diferencia entre
+    el valor del pedido y el promedio, en la escala que ve el modelo. Las categorías de una
+    misma variable se suman. Una fila por pedido (en el orden de `orders`), una columna por variable.
     """
     pipeline, features = artifact["model"], artifact["features"]
     preprocess = pipeline.named_steps["preprocess"]
     coefs = pipeline.named_steps["model"].coef_[0]
     matrix = preprocess.transform(orders[features])
     matrix = matrix.toarray() if hasattr(matrix, "toarray") else np.asarray(matrix)
-    row = int(np.flatnonzero(orders["order_id"].to_numpy() == order_id)[0])
-    contributions = coefs * (matrix[row] - matrix.mean(axis=0))
+    contributions = pd.DataFrame(coefs * (matrix - matrix.mean(axis=0)))
     sources = [_source_feature(n, features) for n in preprocess.get_feature_names_out()]
-    by_feature = pd.Series(contributions).groupby(sources).sum()
-    order = orders.iloc[row]
+    return contributions.T.groupby(sources).sum().T
+
+
+def factors_table(order: pd.Series, contributions: pd.Series) -> pd.DataFrame:
+    """Una fila por variable, de la que más sube el riesgo a la que más lo baja, con su valor escrito."""
     result = pd.DataFrame(
         {
-            "variable": by_feature.index,
-            "etiqueta": [FEATURE_LABELS.get(f, f) for f in by_feature.index],
-            "valor": [format_feature_value(f, order[f]) for f in by_feature.index],
-            "aporte": by_feature.to_numpy(),
+            "variable": contributions.index,
+            "etiqueta": [FEATURE_LABELS.get(f, f) for f in contributions.index],
+            "valor": [format_feature_value(f, order[f]) for f in contributions.index],
+            "aporte": contributions.to_numpy(dtype=float),
         }
     )
     return result.sort_values("aporte", ascending=False).reset_index(drop=True)
+
+
+def risk_factors(artifact: dict, orders: pd.DataFrame, order_id: str) -> pd.DataFrame:
+    """Qué variables suben o bajan el riesgo de un pedido frente al pedido promedio de `orders`."""
+    row = int(np.flatnonzero(orders["order_id"].to_numpy() == order_id)[0])
+    contributions = feature_contributions(artifact, orders).iloc[row]
+    return factors_table(orders.iloc[row], contributions)

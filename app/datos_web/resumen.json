@@ -1,0 +1,3585 @@
+{
+  "generado": "2026-10-26T11:31:03",
+  "modelo": {
+    "entrenado_con": "train + validacion",
+    "anchor": "aprobacion",
+    "cuts": {
+      "alto": 0.1961709228563793,
+      "medio": 0.09454507311027603
+    }
+  },
+  "pedidos": {
+    "n": 19293
+  },
+  "vendedores": {
+    "cut": "2018-05-27T00:30:37",
+    "test_end": "2018-08-29T15:10:26",
+    "top_k": 3,
+    "n_combos": 211,
+    "metrics": {
+      "clasificador": {
+        "precision": 0.7109004739336493,
+        "recall": 0.2804150111192591,
+        "retraso": 0.025800582327892865
+      },
+      "historial": {
+        "precision": 0.6982622432859401,
+        "recall": 0.2839100589201337,
+        "retraso": 0.02792146821608627
+      },
+      "popularidad": {
+        "precision": 0.6935229067930491,
+        "recall": 0.27743082774478395,
+        "retraso": 0.027455553645626192
+      },
+      "azar": {
+        "precision": 0.6611932902051249,
+        "recall": 0.269624964657441,
+        "retraso": 0.031432189796336045
+      }
+    },
+    "vs_random": [
+      -0.005631607468443175,
+      -0.008372135457942255,
+      -0.0029196498216213897
+    ],
+    "vs_history": [
+      -0.0021208858881934015,
+      -0.005752004020225267,
+      0.001376769811753849
+    ],
+    "vs_popularity": [
+      -0.0016549713177333263,
+      -0.004827060480630051,
+      0.0016575807309653335
+    ],
+    "dispatch": {
+      "pct_retrasos_con_despacho_tarde": 0.2773353751914242,
+      "retraso_si_despacho_tarde": 0.2110476634424892,
+      "retraso_si_despacho_a_tiempo": 0.053856952100523846,
+      "pedidos": 96202.0
+    },
+    "names": {
+      "beleza_saude": "health_beauty",
+      "informatica_acessorios": "computers_accessories",
+      "automotivo": "auto",
+      "cama_mesa_banho": "bed_bath_table",
+      "moveis_decoracao": "furniture_decor",
+      "esporte_lazer": "sports_leisure",
+      "perfumaria": "perfumery",
+      "utilidades_domesticas": "housewares",
+      "telefonia": "telephony",
+      "relogios_presentes": "watches_gifts",
+      "alimentos_bebidas": "food_drink",
+      "bebes": "baby",
+      "papelaria": "stationery",
+      "tablets_impressao_imagem": "tablets_printing_image",
+      "brinquedos": "toys",
+      "telefonia_fixa": "fixed_telephony",
+      "ferramentas_jardim": "garden_tools",
+      "fashion_bolsas_e_acessorios": "fashion_bags_accessories",
+      "eletroportateis": "small_appliances",
+      "consoles_games": "consoles_games",
+      "audio": "audio",
+      "fashion_calcados": "fashion_shoes",
+      "cool_stuff": "cool_stuff",
+      "malas_acessorios": "luggage_accessories",
+      "climatizacao": "air_conditioning",
+      "construcao_ferramentas_construcao": "construction_tools_construction",
+      "moveis_cozinha_area_de_servico_jantar_e_jardim": "kitchen_dining_laundry_garden_furniture",
+      "construcao_ferramentas_jardim": "costruction_tools_garden",
+      "fashion_roupa_masculina": "fashion_male_clothing",
+      "pet_shop": "pet_shop",
+      "moveis_escritorio": "office_furniture",
+      "market_place": "market_place",
+      "eletronicos": "electronics",
+      "eletrodomesticos": "home_appliances",
+      "casa_conforto": "home_confort",
+      "construcao_ferramentas_ferramentas": "costruction_tools_tools",
+      "agro_industria_e_comercio": "agro_industry_and_commerce",
+      "livros_tecnicos": "books_technical",
+      "casa_construcao": "home_construction",
+      "instrumentos_musicais": "musical_instruments",
+      "moveis_sala": "furniture_living_room",
+      "construcao_ferramentas_iluminacao": "construction_tools_lights",
+      "industria_comercio_e_negocios": "industry_commerce_and_business",
+      "alimentos": "food",
+      "artes": "art",
+      "moveis_quarto": "furniture_bedroom",
+      "livros_interesse_geral": "books_general_interest",
+      "construcao_ferramentas_seguranca": "construction_tools_safety",
+      "fashion_underwear_e_moda_praia": "fashion_underwear_beach",
+      "fashion_esporte": "fashion_sport",
+      "sinalizacao_e_seguranca": "signaling_and_security",
+      "artigos_de_natal": "christmas_supplies",
+      "fashion_roupa_feminina": "fashio_female_clothing",
+      "eletrodomesticos_2": "home_appliances_2",
+      "bebidas": "drinks",
+      "musica": "music",
+      "portateis_casa_forno_e_cafe": "small_appliances_home_oven_and_coffee",
+      "dvds_blu_ray": "dvds_blu_ray"
+    },
+    "combos": [
+      {
+        "product_category_name": "agro_industria_e_comercio",
+        "customer_state": "MG",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "agro_industria_e_comercio",
+        "customer_state": "RJ",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "agro_industria_e_comercio",
+        "customer_state": "SP",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "alimentos",
+        "customer_state": "BA",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "alimentos",
+        "customer_state": "ES",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "alimentos",
+        "customer_state": "MG",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "alimentos",
+        "customer_state": "PR",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "alimentos",
+        "customer_state": "RJ",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "alimentos",
+        "customer_state": "SC",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "alimentos",
+        "customer_state": "SP",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "alimentos_bebidas",
+        "customer_state": "MG",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "alimentos_bebidas",
+        "customer_state": "PR",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "alimentos_bebidas",
+        "customer_state": "RJ",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "alimentos_bebidas",
+        "customer_state": "SP",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "artes",
+        "customer_state": "BA",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "artes",
+        "customer_state": "MG",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "artes",
+        "customer_state": "RJ",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "artes",
+        "customer_state": "SC",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "artes",
+        "customer_state": "SP",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "artigos_de_natal",
+        "customer_state": "DF",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "artigos_de_natal",
+        "customer_state": "MG",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "artigos_de_natal",
+        "customer_state": "RJ",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "artigos_de_natal",
+        "customer_state": "RS",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "artigos_de_natal",
+        "customer_state": "SC",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "artigos_de_natal",
+        "customer_state": "SP",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "BA",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "DF",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "ES",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "GO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "MG",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "PE",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "PR",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "RJ",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "RS",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "SC",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "audio",
+        "customer_state": "SP",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "AL",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "BA",
+        "vendedores": 37
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "CE",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "DF",
+        "vendedores": 31
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "ES",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "GO",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "MA",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "MG",
+        "vendedores": 66
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "MS",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "MT",
+        "vendedores": 21
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "PA",
+        "vendedores": 23
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "PB",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "PE",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "PI",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "PR",
+        "vendedores": 43
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "RJ",
+        "vendedores": 76
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "RN",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "RO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "RS",
+        "vendedores": 40
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "SC",
+        "vendedores": 50
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "SE",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "SP",
+        "vendedores": 109
+      },
+      {
+        "product_category_name": "automotivo",
+        "customer_state": "TO",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "AM",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "BA",
+        "vendedores": 27
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "CE",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "DF",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "ES",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "GO",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "MA",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "MG",
+        "vendedores": 59
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "MS",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "MT",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "PA",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "PB",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "PE",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "PI",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "PR",
+        "vendedores": 43
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "RJ",
+        "vendedores": 65
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "RN",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "RO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "RS",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "SC",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "SE",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "SP",
+        "vendedores": 97
+      },
+      {
+        "product_category_name": "bebes",
+        "customer_state": "TO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "bebidas",
+        "customer_state": "MG",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "bebidas",
+        "customer_state": "SP",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "AL",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "AM",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "AP",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "BA",
+        "vendedores": 77
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "CE",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "DF",
+        "vendedores": 62
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "ES",
+        "vendedores": 51
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "GO",
+        "vendedores": 58
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "MA",
+        "vendedores": 30
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "MG",
+        "vendedores": 121
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "MS",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "MT",
+        "vendedores": 40
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "PA",
+        "vendedores": 38
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "PB",
+        "vendedores": 21
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "PE",
+        "vendedores": 54
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "PI",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "PR",
+        "vendedores": 85
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "RJ",
+        "vendedores": 130
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "RN",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "RO",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "RR",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "RS",
+        "vendedores": 84
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "SC",
+        "vendedores": 80
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "SE",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "SP",
+        "vendedores": 171
+      },
+      {
+        "product_category_name": "beleza_saude",
+        "customer_state": "TO",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "AL",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "AM",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "BA",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "CE",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "DF",
+        "vendedores": 37
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "ES",
+        "vendedores": 35
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "GO",
+        "vendedores": 32
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "MA",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "MG",
+        "vendedores": 69
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "MS",
+        "vendedores": 21
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "MT",
+        "vendedores": 23
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "PA",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "PB",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "PE",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "PI",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "PR",
+        "vendedores": 52
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "RJ",
+        "vendedores": 87
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "RN",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "RO",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "RS",
+        "vendedores": 59
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "SC",
+        "vendedores": 50
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "SE",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "SP",
+        "vendedores": 107
+      },
+      {
+        "product_category_name": "brinquedos",
+        "customer_state": "TO",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "AL",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "AM",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "BA",
+        "vendedores": 49
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "CE",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "DF",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "ES",
+        "vendedores": 40
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "GO",
+        "vendedores": 43
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "MA",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "MG",
+        "vendedores": 69
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "MS",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "MT",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "PA",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "PB",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "PE",
+        "vendedores": 27
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "PI",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "PR",
+        "vendedores": 52
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "RJ",
+        "vendedores": 71
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "RN",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "RO",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "RS",
+        "vendedores": 57
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "SC",
+        "vendedores": 52
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "SE",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "SP",
+        "vendedores": 88
+      },
+      {
+        "product_category_name": "cama_mesa_banho",
+        "customer_state": "TO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "casa_conforto",
+        "customer_state": "ES",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "casa_conforto",
+        "customer_state": "MG",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "casa_conforto",
+        "customer_state": "PR",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "casa_conforto",
+        "customer_state": "RJ",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "casa_conforto",
+        "customer_state": "RS",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "casa_conforto",
+        "customer_state": "SP",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "DF",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "ES",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "GO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "MG",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "PR",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "RJ",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "RS",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "SC",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "casa_construcao",
+        "customer_state": "SP",
+        "vendedores": 23
+      },
+      {
+        "product_category_name": "climatizacao",
+        "customer_state": "ES",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "climatizacao",
+        "customer_state": "MG",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "climatizacao",
+        "customer_state": "PR",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "climatizacao",
+        "customer_state": "RJ",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "climatizacao",
+        "customer_state": "RS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "climatizacao",
+        "customer_state": "SP",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "AL",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "BA",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "CE",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "DF",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "ES",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "GO",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "MA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "MG",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "MS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "MT",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "PA",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "PB",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "PE",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "PR",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "RJ",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "RN",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "RS",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "SC",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "SE",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "consoles_games",
+        "customer_state": "SP",
+        "vendedores": 41
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "BA",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "CE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "MG",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "MS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "MT",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "PE",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "PR",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "RJ",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "RS",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "SC",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "construcao_ferramentas_construcao",
+        "customer_state": "SP",
+        "vendedores": 30
+      },
+      {
+        "product_category_name": "construcao_ferramentas_ferramentas",
+        "customer_state": "RS",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_ferramentas",
+        "customer_state": "SC",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_ferramentas",
+        "customer_state": "SP",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "construcao_ferramentas_iluminacao",
+        "customer_state": "MG",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "construcao_ferramentas_iluminacao",
+        "customer_state": "RJ",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_iluminacao",
+        "customer_state": "RS",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_iluminacao",
+        "customer_state": "SP",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "construcao_ferramentas_jardim",
+        "customer_state": "BA",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_jardim",
+        "customer_state": "MG",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "construcao_ferramentas_jardim",
+        "customer_state": "RJ",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "construcao_ferramentas_jardim",
+        "customer_state": "RS",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_jardim",
+        "customer_state": "SP",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "construcao_ferramentas_seguranca",
+        "customer_state": "MG",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "construcao_ferramentas_seguranca",
+        "customer_state": "PR",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "construcao_ferramentas_seguranca",
+        "customer_state": "RJ",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "construcao_ferramentas_seguranca",
+        "customer_state": "SP",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "AL",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "BA",
+        "vendedores": 36
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "CE",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "DF",
+        "vendedores": 32
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "ES",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "GO",
+        "vendedores": 30
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "MA",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "MG",
+        "vendedores": 81
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "MS",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "MT",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "PA",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "PB",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "PE",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "PI",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "PR",
+        "vendedores": 54
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "RJ",
+        "vendedores": 75
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "RN",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "RO",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "RS",
+        "vendedores": 58
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "SC",
+        "vendedores": 36
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "SE",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "SP",
+        "vendedores": 125
+      },
+      {
+        "product_category_name": "cool_stuff",
+        "customer_state": "TO",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "dvds_blu_ray",
+        "customer_state": "MG",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "BA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "ES",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "MG",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "PR",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "RJ",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "RS",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "SC",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletrodomesticos",
+        "customer_state": "SP",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "eletrodomesticos_2",
+        "customer_state": "BA",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletrodomesticos_2",
+        "customer_state": "MG",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "eletrodomesticos_2",
+        "customer_state": "PR",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletrodomesticos_2",
+        "customer_state": "RJ",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "eletrodomesticos_2",
+        "customer_state": "RS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletrodomesticos_2",
+        "customer_state": "SC",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "eletrodomesticos_2",
+        "customer_state": "SP",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "AC",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "AL",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "BA",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "CE",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "DF",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "ES",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "GO",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "MA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "MG",
+        "vendedores": 40
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "MS",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "MT",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "PA",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "PB",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "PE",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "PI",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "PR",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "RJ",
+        "vendedores": 40
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "RN",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "RO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "RS",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "SC",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "SE",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "eletronicos",
+        "customer_state": "SP",
+        "vendedores": 56
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "BA",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "CE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "DF",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "GO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "MG",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "MS",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "MT",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "PA",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "PR",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "RJ",
+        "vendedores": 29
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "RS",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "SC",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "eletroportateis",
+        "customer_state": "SP",
+        "vendedores": 40
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "AC",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "AL",
+        "vendedores": 21
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "AM",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "BA",
+        "vendedores": 82
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "CE",
+        "vendedores": 47
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "DF",
+        "vendedores": 70
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "ES",
+        "vendedores": 66
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "GO",
+        "vendedores": 64
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "MA",
+        "vendedores": 33
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "MG",
+        "vendedores": 131
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "MS",
+        "vendedores": 32
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "MT",
+        "vendedores": 36
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "PA",
+        "vendedores": 35
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "PB",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "PE",
+        "vendedores": 54
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "PI",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "PR",
+        "vendedores": 101
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "RJ",
+        "vendedores": 149
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "RN",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "RO",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "RS",
+        "vendedores": 112
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "SC",
+        "vendedores": 92
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "SE",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "SP",
+        "vendedores": 187
+      },
+      {
+        "product_category_name": "esporte_lazer",
+        "customer_state": "TO",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "BA",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "CE",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "DF",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "ES",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "GO",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "MA",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "MG",
+        "vendedores": 29
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "MS",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "MT",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "PA",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "PB",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "PE",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "PR",
+        "vendedores": 27
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "RJ",
+        "vendedores": 35
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "RN",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "RO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "RS",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "SC",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "fashion_bolsas_e_acessorios",
+        "customer_state": "SP",
+        "vendedores": 43
+      },
+      {
+        "product_category_name": "fashion_calcados",
+        "customer_state": "DF",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_calcados",
+        "customer_state": "ES",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_calcados",
+        "customer_state": "MG",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "fashion_calcados",
+        "customer_state": "PR",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_calcados",
+        "customer_state": "RJ",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "fashion_calcados",
+        "customer_state": "SP",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "fashion_esporte",
+        "customer_state": "SP",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_roupa_feminina",
+        "customer_state": "SP",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_roupa_masculina",
+        "customer_state": "BA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "fashion_roupa_masculina",
+        "customer_state": "MG",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "fashion_roupa_masculina",
+        "customer_state": "PR",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "fashion_roupa_masculina",
+        "customer_state": "RJ",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_roupa_masculina",
+        "customer_state": "SP",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "fashion_underwear_e_moda_praia",
+        "customer_state": "MG",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "fashion_underwear_e_moda_praia",
+        "customer_state": "SP",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "AL",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "BA",
+        "vendedores": 31
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "CE",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "DF",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "ES",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "GO",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "MA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "MG",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "MS",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "MT",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "PA",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "PB",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "PE",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "PI",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "PR",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "RJ",
+        "vendedores": 59
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "RN",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "RO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "RS",
+        "vendedores": 36
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "SC",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "SE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "SP",
+        "vendedores": 99
+      },
+      {
+        "product_category_name": "ferramentas_jardim",
+        "customer_state": "TO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "industria_comercio_e_negocios",
+        "customer_state": "MG",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "industria_comercio_e_negocios",
+        "customer_state": "RJ",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "industria_comercio_e_negocios",
+        "customer_state": "RS",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "industria_comercio_e_negocios",
+        "customer_state": "SC",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "industria_comercio_e_negocios",
+        "customer_state": "SP",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "AL",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "AM",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "AP",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "BA",
+        "vendedores": 58
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "CE",
+        "vendedores": 38
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "DF",
+        "vendedores": 41
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "ES",
+        "vendedores": 46
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "GO",
+        "vendedores": 45
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "MA",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "MG",
+        "vendedores": 94
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "MS",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "MT",
+        "vendedores": 23
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "PA",
+        "vendedores": 43
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "PB",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "PE",
+        "vendedores": 39
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "PI",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "PR",
+        "vendedores": 71
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "RJ",
+        "vendedores": 86
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "RN",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "RO",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "RS",
+        "vendedores": 75
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "SC",
+        "vendedores": 60
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "SE",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "SP",
+        "vendedores": 120
+      },
+      {
+        "product_category_name": "informatica_acessorios",
+        "customer_state": "TO",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "BA",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "DF",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "ES",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "GO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "MA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "MG",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "MS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "PA",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "PE",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "PI",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "PR",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "RJ",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "RS",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "SC",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "instrumentos_musicais",
+        "customer_state": "SP",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "BA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "DF",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "GO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "MG",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "PE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "PR",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "RJ",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "RS",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "SC",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "livros_interesse_geral",
+        "customer_state": "SP",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "BA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "ES",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "MG",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "PR",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "RJ",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "RS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "SC",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "livros_tecnicos",
+        "customer_state": "SP",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "AL",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "BA",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "CE",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "DF",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "ES",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "GO",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "MA",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "MG",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "MS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "MT",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "PB",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "PE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "PI",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "PR",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "RJ",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "RS",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "SC",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "malas_acessorios",
+        "customer_state": "SP",
+        "vendedores": 27
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "ES",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "GO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "MG",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "MT",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "PA",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "PR",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "RJ",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "RS",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "SC",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "market_place",
+        "customer_state": "SP",
+        "vendedores": 32
+      },
+      {
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim",
+        "customer_state": "MG",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim",
+        "customer_state": "PR",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim",
+        "customer_state": "RJ",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim",
+        "customer_state": "RS",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim",
+        "customer_state": "SC",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_cozinha_area_de_servico_jantar_e_jardim",
+        "customer_state": "SP",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "AC",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "AL",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "BA",
+        "vendedores": 56
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "CE",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "DF",
+        "vendedores": 40
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "ES",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "GO",
+        "vendedores": 31
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "MA",
+        "vendedores": 23
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "MG",
+        "vendedores": 99
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "MS",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "MT",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "PA",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "PB",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "PE",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "PI",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "PR",
+        "vendedores": 72
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "RJ",
+        "vendedores": 107
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "RN",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "RO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "RS",
+        "vendedores": 75
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "SC",
+        "vendedores": 65
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "SE",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "SP",
+        "vendedores": 136
+      },
+      {
+        "product_category_name": "moveis_decoracao",
+        "customer_state": "TO",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "BA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "CE",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "DF",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "GO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "MG",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "PE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "PR",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "RJ",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "RS",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "SC",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "moveis_escritorio",
+        "customer_state": "SP",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "moveis_quarto",
+        "customer_state": "RJ",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_quarto",
+        "customer_state": "SP",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "BA",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "DF",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "ES",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "GO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "MG",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "PR",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "RJ",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "RS",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "SC",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "moveis_sala",
+        "customer_state": "SP",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "musica",
+        "customer_state": "RJ",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "AL",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "BA",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "CE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "DF",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "ES",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "GO",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "MA",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "MG",
+        "vendedores": 37
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "MS",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "MT",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "PA",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "PB",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "PE",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "PR",
+        "vendedores": 28
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "RJ",
+        "vendedores": 39
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "RN",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "RO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "RS",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "SC",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "papelaria",
+        "customer_state": "SP",
+        "vendedores": 63
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "AL",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "BA",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "CE",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "DF",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "ES",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "GO",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "MA",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "MG",
+        "vendedores": 47
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "MS",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "MT",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "PA",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "PB",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "PE",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "PI",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "PR",
+        "vendedores": 37
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "RJ",
+        "vendedores": 49
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "RN",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "RO",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "RS",
+        "vendedores": 35
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "SC",
+        "vendedores": 27
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "SE",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "SP",
+        "vendedores": 71
+      },
+      {
+        "product_category_name": "perfumaria",
+        "customer_state": "TO",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "BA",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "CE",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "DF",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "ES",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "GO",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "MA",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "MG",
+        "vendedores": 39
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "MS",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "MT",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "PA",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "PB",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "PE",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "PI",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "PR",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "RJ",
+        "vendedores": 30
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "RN",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "RO",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "RS",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "SC",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "pet_shop",
+        "customer_state": "SP",
+        "vendedores": 47
+      },
+      {
+        "product_category_name": "portateis_casa_forno_e_cafe",
+        "customer_state": "SP",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "AL",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "AM",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "AP",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "BA",
+        "vendedores": 26
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "CE",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "DF",
+        "vendedores": 23
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "ES",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "GO",
+        "vendedores": 17
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "MA",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "MG",
+        "vendedores": 33
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "MS",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "MT",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "PA",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "PB",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "PE",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "PI",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "PR",
+        "vendedores": 29
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "RJ",
+        "vendedores": 45
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "RN",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "RO",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "RS",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "SC",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "SE",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "SP",
+        "vendedores": 47
+      },
+      {
+        "product_category_name": "relogios_presentes",
+        "customer_state": "TO",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "BA",
+        "vendedores": 16
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "CE",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "DF",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "ES",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "GO",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "MA",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "MG",
+        "vendedores": 41
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "MS",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "MT",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "PA",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "PE",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "PI",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "PR",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "RJ",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "RS",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "SC",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "sin_categoria",
+        "customer_state": "SP",
+        "vendedores": 79
+      },
+      {
+        "product_category_name": "sinalizacao_e_seguranca",
+        "customer_state": "RJ",
+        "vendedores": 5
+      },
+      {
+        "product_category_name": "sinalizacao_e_seguranca",
+        "customer_state": "RS",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "sinalizacao_e_seguranca",
+        "customer_state": "SP",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "tablets_impressao_imagem",
+        "customer_state": "ES",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "AL",
+        "vendedores": 13
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "AM",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "BA",
+        "vendedores": 34
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "CE",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "DF",
+        "vendedores": 24
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "ES",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "GO",
+        "vendedores": 21
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "MA",
+        "vendedores": 18
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "MG",
+        "vendedores": 48
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "MS",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "MT",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "PA",
+        "vendedores": 20
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "PB",
+        "vendedores": 10
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "PE",
+        "vendedores": 27
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "PI",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "PR",
+        "vendedores": 36
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "RJ",
+        "vendedores": 49
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "RN",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "RO",
+        "vendedores": 9
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "RS",
+        "vendedores": 32
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "SC",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "SE",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "SP",
+        "vendedores": 69
+      },
+      {
+        "product_category_name": "telefonia",
+        "customer_state": "TO",
+        "vendedores": 7
+      },
+      {
+        "product_category_name": "telefonia_fixa",
+        "customer_state": "BA",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "telefonia_fixa",
+        "customer_state": "ES",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "telefonia_fixa",
+        "customer_state": "MG",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "telefonia_fixa",
+        "customer_state": "RJ",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "telefonia_fixa",
+        "customer_state": "RS",
+        "vendedores": 8
+      },
+      {
+        "product_category_name": "telefonia_fixa",
+        "customer_state": "SP",
+        "vendedores": 22
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "AL",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "AP",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "BA",
+        "vendedores": 54
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "CE",
+        "vendedores": 25
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "DF",
+        "vendedores": 50
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "ES",
+        "vendedores": 47
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "GO",
+        "vendedores": 44
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "MA",
+        "vendedores": 15
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "MG",
+        "vendedores": 109
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "MS",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "MT",
+        "vendedores": 19
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "PA",
+        "vendedores": 14
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "PB",
+        "vendedores": 11
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "PE",
+        "vendedores": 23
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "PI",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "PR",
+        "vendedores": 73
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "RJ",
+        "vendedores": 128
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "RN",
+        "vendedores": 12
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "RO",
+        "vendedores": 4
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "RS",
+        "vendedores": 78
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "SC",
+        "vendedores": 67
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "SE",
+        "vendedores": 6
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "SP",
+        "vendedores": 172
+      },
+      {
+        "product_category_name": "utilidades_domesticas",
+        "customer_state": "TO",
+        "vendedores": 5
+      }
+    ]
+  }
+}
