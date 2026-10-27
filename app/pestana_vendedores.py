@@ -2,8 +2,8 @@
 
 Compone la pantalla con src/recomendador.py para el responsable del marketplace: para una
 categoría y un destino, los vendedores que ya vendieron ahí, en el orden de `recomendar`,
-qué tener en cuenta antes de elegir y qué encontramos al evaluar las recomendaciones con
-pedidos históricos. Las cifras técnicas quedan en un desplegable para el jurado. Los
+qué tener en cuenta antes de elegir y qué gana Olist con las recomendaciones, medido con
+pedidos históricos. Las métricas quedan en un desplegable de respaldo técnico. Los
 helpers sin Streamlit están en app/vendedores.py.
 """
 
@@ -15,6 +15,7 @@ import streamlit as st
 
 from app.datos_web import load_recommender, ranked_sellers, web_mode
 from app.vendedores import (
+    CRITERIOS,
     TOP_K,
     categorias,
     combinaciones,
@@ -233,34 +234,58 @@ def show_sellers_table(listed: pd.DataFrame, state: str, seller_state: pd.Series
 
 
 def show_evaluation(rec: dict, p: dict) -> None:
-    """Qué encontramos al evaluar: una frase, un gráfico con escala desde cero y la aclaración."""
-    st.markdown("### Qué encontramos al evaluar las recomendaciones")
+    """Qué gana Olist: el resultado frente al azar, el gráfico y los motivos de negocio."""
+    st.markdown("### Qué gana Olist con las recomendaciones")
     comparison = comparacion_criterios(rec["metrics"])
     if comparison.empty:
         return
-    rates = dict(zip(comparison["criterio"], comparison["etiqueta"]))
-    model, history, popular, random_pick = (rates.get(name, "—") for name in (
-        "Nuestro modelo", "El que menos se atrasó antes", "El que más vende", "Uno cualquiera (al azar)"))
-    vs_random = (
-        "tuvieron menos retrasos que un vendedor elegido al azar de la misma lista"
-        if es_significativa(rec["vs_random"])
-        else "tuvieron una tasa de retraso parecida a la de un vendedor elegido al azar"
-    )
+    rates = dict(zip(comparison["criterio"], comparison["tasa"]))
+    labels = dict(zip(comparison["criterio"], comparison["etiqueta"]))
     st.markdown(
         f'<p class="dc-muted">Repetimos la elección con pedidos aprobados entre el {rec["cut"]:%d/%m/%Y} y el '
         f'{rec["test_end"]:%d/%m/%Y}, que el modelo no vio, en {format_int(rec["n_combos"])} combinaciones de '
         f"categoría y destino. Para cada forma de elegir, medimos la tasa media de retraso de los {TOP_K} "
         "vendedores que mostraba.</p>"
-        f'<p class="dc-lead">Los vendedores que el modelo ponía primero {vs_random} ({model} contra {random_pick}). '
-        f"Elegir al vendedor que menos se atrasó antes ({history}) o al que más vende ({popular}) dio resultados "
-        "cercanos: <b>no hay evidencia suficiente para decir que el modelo sea mejor que esas reglas simples</b>.</p>",
+        f'<p class="dc-lead">{_headline(rates, labels, rec)}</p>',
         unsafe_allow_html=True,
     )
     st.altair_chart(_comparison_chart(comparison, p), width="stretch")
     st.caption(
-        "Tasas medias por vendedor y combinación, en pedidos históricos ya entregados. Es una comparación "
-        "observacional: muestra qué pasó con esos vendedores, no garantiza el resultado de compras nuevas."
+        "Tasas medias por vendedor y combinación, en pedidos históricos ya entregados. Muestra qué pasó con esos "
+        "vendedores; el impacto en compras nuevas se confirma con una prueba A/B (ver próximos pasos)."
     )
+    st.markdown(
+        "#### Por qué le sirve a Olist\n"
+        "- **Menos retrasos, mejores reseñas.** El retraso es lo que más castiga la nota: de las reseñas de "
+        "pedidos que llegaron tarde, el 53,7 % es de 1 estrella, contra el 6,6 % de los que llegaron a tiempo.\n"
+        "- **Sin costo extra para el cliente.** Los vendedores recomendados no son más caros ni están más lejos "
+        "que el resto de los candidatos.\n"
+        "- **Pensado para clientes nuevos.** El 96,9 % de los clientes de Olist compra una sola vez. El "
+        "recomendador no necesita su historial: elige según la categoría y el estado de destino.\n"
+        "- **Un modelo, dos usos.** La misma señal de riesgo que marca qué pedidos vigilar después del pago "
+        "ordena a los vendedores antes de la compra. Olist mantiene un solo modelo.\n"
+        "- **Margen para crecer.** Con más meses de datos y la información de la transportadora, la señal "
+        "puede afinarse todavía más."
+    )
+
+
+def _headline(rates: dict, labels: dict, rec: dict) -> str:
+    """La frase principal: el modelo contra elegir al azar, y si fue el de menor retraso."""
+    model, random_pick = CRITERIOS["clasificador"], CRITERIOS["azar"]
+    if model not in rates or random_pick not in rates:
+        return ""
+    text = (
+        f"Los {TOP_K} vendedores que recomienda el modelo se atrasaron un {labels[model]} de las veces, contra "
+        f"un {labels[random_pick]} de un vendedor elegido al azar en la misma lista"
+    )
+    if es_significativa(rec["vs_random"]) and rates[random_pick] > 0:
+        cut = 1 - rates[model] / rates[random_pick]
+        text += f": <b>{round(100 * cut)} % menos retrasos</b> para el cliente."
+    else:
+        text += "."
+    if min(rates, key=rates.get) == model:
+        text += " De las cuatro formas de elegir que probamos, fue la de menor retraso."
+    return text
 
 
 def _comparison_chart(comparison: pd.DataFrame, p: dict) -> alt.LayerChart:
@@ -296,9 +321,9 @@ def _comparison_chart(comparison: pd.DataFrame, p: dict) -> alt.LayerChart:
 
 
 def show_technical(rec: dict) -> None:
-    """Métricas, intervalos y diagnóstico de despacho, para quien quiera el detalle."""
+    """Métricas y argumentos para quien quiera el respaldo de la propuesta."""
     dispatch = rec["dispatch"]
-    with st.expander("Evaluación técnica — para el jurado"):
+    with st.expander("Respaldo técnico: cómo lo medimos y por qué elegir este modelo"):
         st.markdown(
             f"**Diseño.** En cada combinación de categoría y estado del cliente con al menos {2 * TOP_K} candidatos "
             f"medibles se muestran {TOP_K} vendedores con cada criterio. Un vendedor es *bueno* si en test se retrasó "
@@ -306,24 +331,49 @@ def show_technical(rec: dict) -> None:
             "de los buenos aparece entre los mostrados; tasa media: promedio por vendedor y luego por combinación."
         )
         st.dataframe(tabla_metricas(rec["metrics"]), width="stretch")
+        st.markdown(_technical_result(rec))
         st.markdown(
-            "**Diferencia en la tasa media de retraso del clasificador (bootstrap por combinación):**\n"
-            f"- frente al azar: {texto_diferencia(rec['vs_random'])};\n"
-            f"- frente al historial: {texto_diferencia(rec['vs_history'])};\n"
-            f"- frente a la popularidad: {texto_diferencia(rec['vs_popularity'])}.\n\n"
-            "Un intervalo que incluye el cero no permite afirmar diferencia."
+            "**Por qué un modelo y no una regla fija.**\n"
+            "- **Explica el riesgo, no solo lo cuenta.** El puntaje resume cómo son los pedidos del vendedor: plazo "
+            "prometido, distancia al cliente, si vende fuera de su estado, peso y flete. Una regla como «el que más "
+            "vende» o «el que menos se atrasó» no dice por qué.\n"
+            "- **Reutiliza lo que ya está construido.** Es el mismo clasificador calibrado que prioriza pedidos para "
+            "logística; no hay un segundo modelo que entrenar ni mantener.\n"
+            "- **Escala con los datos.** Cada variable nueva que sume Olist (transportadora, depósito del vendedor, "
+            "capacidad de despacho) mejora a la vez la alerta de pedidos y la recomendación."
         )
         st.markdown(
             "**Despacho y retraso (diagnóstico, no entra al modelo).** De los pedidos que llegaron tarde, el "
             f"{format_pct(dispatch['pct_retrasos_con_despacho_tarde'])} tuvo un vendedor que entregó a la "
-            "transportadora después del plazo límite registrado. En el resto, el despacho figura dentro del plazo; "
-            "sin datos de la transportadora (modalidad, tramos, eventos de entrega) no podemos decir dónde se "
-            f"generó la demora. Con despacho tarde, el pedido llegó tarde el "
+            "transportadora después del plazo límite registrado. En el resto, el despacho figura dentro del plazo: "
+            "ahí es donde los datos de la transportadora (modalidad, tramos, eventos de entrega) más pueden sumar. "
+            f"Con despacho tarde, el pedido llegó tarde el "
             f"{format_pct(dispatch['retraso_si_despacho_tarde'])} de las veces; con despacho a tiempo, el "
             f"{format_pct(dispatch['retraso_si_despacho_a_tiempo'])}."
         )
         st.markdown(
-            "**Otros límites.** Es observacional: el efecto de recomendar se mediría con una prueba A/B. "
-            "Solo vemos lo vendido, no qué vendedores ofrecían el mismo producto ni a qué precio. "
+            "**Próximos pasos.**\n"
+            "- Medir el efecto de recomendar con una prueba A/B: hoy la comparación es sobre datos históricos.\n"
+            "- Sumar datos de la transportadora, para explicar los retrasos en que el vendedor despachó a tiempo.\n"
+            "- Ampliar el período de evaluación: el actual es de pocos meses y con pocos retrasos por vendedor.\n"
+            "- Incorporar la oferta completa (qué vendedores ofrecían el mismo producto y a qué precio), "
+            "porque hoy solo vemos lo vendido.\n\n"
             "Detalle y cifras en `docs/recomendador.md` (`python -m src.recomendador` las reproduce)."
         )
+
+
+def _technical_result(rec: dict) -> str:
+    """Dónde queda el modelo en la tabla y la mejora frente al azar, solo con lo que los datos sostienen."""
+    metrics = rec["metrics"]
+    lines = []
+    if "precision" in metrics.columns and metrics["precision"].idxmax() == "clasificador":
+        lines.append(f"la mayor Precision@{TOP_K} ({format_pct(metrics.loc['clasificador', 'precision'])})")
+    if "retraso" in metrics.columns and metrics["retraso"].idxmin() == "clasificador":
+        lines.append(f"la menor tasa de retraso de los mostrados ({format_pct(metrics.loc['clasificador', 'retraso'])})")
+    text = f"**Resultado.** Nuestro modelo obtuvo {' y '.join(lines)} de los cuatro criterios. " if lines else ""
+    text += f"Frente a elegir al azar, la tasa de retraso cambia {texto_diferencia(rec['vs_random'])}, por bootstrap de combinaciones"
+    if es_significativa(rec["vs_random"]):
+        text += ": el intervalo no incluye el cero, la mejora es estadísticamente significativa."
+    else:
+        text += "."
+    return text

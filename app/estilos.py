@@ -136,7 +136,7 @@ input:focus-visible, [data-baseweb="select"] :focus-visible {{ outline: 3px soli
 
 /* Transiciones discretas al aparecer contenido; nada continuo */
 @keyframes dc-in {{ from {{ opacity: 0; transform: translateY(4px); }} to {{ opacity: 1; transform: none; }} }}
-.dc-card, .dc-seller, .st-key-dc-inspector, .dc-lift {{ animation: dc-in .22s ease-out both; }}
+.dc-card, .dc-seller, .st-key-dc-inspector, .dc-lift {{ animation: dc-in .22s ease-out backwards; }}
 @media (prefers-reduced-motion: reduce) {{
   *, *::before, *::after {{ animation: none !important; transition: none !important; scroll-behavior: auto !important; }}
 }}
@@ -167,7 +167,9 @@ input:focus-visible, [data-baseweb="select"] :focus-visible {{ outline: 3px soli
 
 /* Tarjetas de nivel */
 .dc-card {{ background: {p["surface"]}; border: 1px solid {p["line"]}; border-left: 6px solid var(--lvl);
-  border-radius: 12px; padding: 12px 16px; height: 100%; box-shadow: {p["shadow_soft"]}; }}
+  border-radius: 12px; padding: 12px 16px; height: 100%; box-shadow: {p["shadow_soft"]};
+  transition: transform .18s ease, box-shadow .18s ease; }}
+.dc-card:hover {{ transform: translateY(-2px); box-shadow: {p["shadow_hover"]}; }}
 .dc-card .t {{ font-weight: 600; color: {p["text"]}; font-size: 0.95rem; }}
 .dc-card .n {{ font-family: Georgia, serif; font-size: 1.7rem; color: {p["text"]}; line-height: 1.2; }}
 .dc-card .p {{ color: {p["muted"]}; font-size: 0.9rem; }}
@@ -207,7 +209,9 @@ input:focus-visible, [data-baseweb="select"] :focus-visible {{ outline: 3px soli
 
 /* Vendedores destacados: tarjetas informativas (no se pulsan) */
 .dc-seller {{ background: {p["surface"]}; border: 1px solid {p["line"]}; border-top: 5px solid var(--lvl);
-  border-radius: 12px; padding: 12px 14px; box-shadow: {p["shadow_soft"]}; height: 100%; }}
+  border-radius: 12px; padding: 12px 14px; box-shadow: {p["shadow_soft"]}; height: 100%;
+  transition: transform .18s ease, box-shadow .18s ease; }}
+.dc-seller:hover {{ transform: translateY(-2px); box-shadow: {p["shadow_hover"]}; }}
 .dc-seller-top {{ display: flex; justify-content: space-between; align-items: center; gap: 8px; }}
 .dc-rank {{ font-family: Georgia, serif; font-size: 1.15rem; color: {p["text"]}; }}
 .dc-seller-id {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.78rem;
