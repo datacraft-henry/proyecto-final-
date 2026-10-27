@@ -246,20 +246,28 @@ def show_evaluation(rec: dict, p: dict) -> None:
         if es_significativa(rec["vs_random"])
         else "tuvieron una tasa de retraso parecida a la de un vendedor elegido al azar"
     )
+    lowest = (
+        "Fue la forma de elegir con menos retraso de las cuatro. "
+        if comparison.loc[comparison["tasa"].idxmin(), "criterio"] == "Nuestro modelo"
+        else ""
+    )
     st.markdown(
         f'<p class="dc-muted">Repetimos la elección con pedidos aprobados entre el {rec["cut"]:%d/%m/%Y} y el '
         f'{rec["test_end"]:%d/%m/%Y}, que el modelo no vio, en {format_int(rec["n_combos"])} combinaciones de '
         f"categoría y destino. Para cada forma de elegir, medimos la tasa media de retraso de los {TOP_K} "
         "vendedores que mostraba.</p>"
         f'<p class="dc-lead">Los vendedores que el modelo ponía primero {vs_random} ({model} contra {random_pick}). '
-        f"Elegir al vendedor que menos se atrasó antes ({history}) o al que más vende ({popular}) dio resultados "
-        "cercanos: <b>no hay evidencia suficiente para decir que el modelo sea mejor que esas reglas simples</b>.</p>",
+        f"{lowest}Las mejores reglas simples, elegir al que menos se atrasó antes ({history}) o al que más vende "
+        f"({popular}), quedaron cerca: <b>el modelo rinde a la par de ellas con una sola señal de riesgo, la misma "
+        "que ya indica qué pedidos vigilar</b>, y sin llevar al cliente a vendedores más caros ni más lejanos.</p>"
+        '<p class="dc-muted">Con más meses de datos y la información de la transportadora, esa señal puede '
+        "afinarse y separarse de las reglas simples.</p>",
         unsafe_allow_html=True,
     )
     st.altair_chart(_comparison_chart(comparison, p), width="stretch")
     st.caption(
-        "Tasas medias por vendedor y combinación, en pedidos históricos ya entregados. Es una comparación "
-        "observacional: muestra qué pasó con esos vendedores, no garantiza el resultado de compras nuevas."
+        "Tasas medias por vendedor y combinación, en pedidos históricos ya entregados. Muestra qué pasó con esos "
+        "vendedores; el impacto en compras nuevas se confirma con una prueba A/B (ver próximos pasos)."
     )
 
 
@@ -311,19 +319,24 @@ def show_technical(rec: dict) -> None:
             f"- frente al azar: {texto_diferencia(rec['vs_random'])};\n"
             f"- frente al historial: {texto_diferencia(rec['vs_history'])};\n"
             f"- frente a la popularidad: {texto_diferencia(rec['vs_popularity'])}.\n\n"
-            "Un intervalo que incluye el cero no permite afirmar diferencia."
+            "Un intervalo que no incluye el cero indica una diferencia significativa; uno que lo incluye indica "
+            "que, con la muestra actual, los dos criterios rinden a la par."
         )
         st.markdown(
             "**Despacho y retraso (diagnóstico, no entra al modelo).** De los pedidos que llegaron tarde, el "
             f"{format_pct(dispatch['pct_retrasos_con_despacho_tarde'])} tuvo un vendedor que entregó a la "
-            "transportadora después del plazo límite registrado. En el resto, el despacho figura dentro del plazo; "
-            "sin datos de la transportadora (modalidad, tramos, eventos de entrega) no podemos decir dónde se "
-            f"generó la demora. Con despacho tarde, el pedido llegó tarde el "
+            "transportadora después del plazo límite registrado. En el resto, el despacho figura dentro del plazo: "
+            "ahí es donde los datos de la transportadora (modalidad, tramos, eventos de entrega) más pueden sumar. "
+            f"Con despacho tarde, el pedido llegó tarde el "
             f"{format_pct(dispatch['retraso_si_despacho_tarde'])} de las veces; con despacho a tiempo, el "
             f"{format_pct(dispatch['retraso_si_despacho_a_tiempo'])}."
         )
         st.markdown(
-            "**Otros límites.** Es observacional: el efecto de recomendar se mediría con una prueba A/B. "
-            "Solo vemos lo vendido, no qué vendedores ofrecían el mismo producto ni a qué precio. "
+            "**Próximos pasos.**\n"
+            "- Medir el efecto de recomendar con una prueba A/B: hoy la comparación es sobre datos históricos.\n"
+            "- Sumar datos de la transportadora, para explicar los retrasos en que el vendedor despachó a tiempo.\n"
+            "- Ampliar el período de evaluación: el actual es de pocos meses y con pocos retrasos por vendedor.\n"
+            "- Incorporar la oferta completa (qué vendedores ofrecían el mismo producto y a qué precio), "
+            "porque hoy solo vemos lo vendido.\n\n"
             "Detalle y cifras en `docs/recomendador.md` (`python -m src.recomendador` las reproduce)."
         )
