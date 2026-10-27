@@ -40,9 +40,24 @@ df = bigquery.Client(project="MI-PROYECTO").query(
 
 ## Criterio de aceptación (tarjeta E1 en Trello)
 
-- [ ] `python -m sql.cargar_bigquery --proyecto X --validar` termina en `VALIDACIÓN: OK`.
-- [ ] `pedidos_analitica` tiene la misma cantidad de filas y la misma tasa de `pedido_retrasado` que `build_features(...)` de `src/` con anchor `aprobacion`.
-- [ ] Los compañeros con acceso al proyecto pueden consultar la vista desde la consola de BigQuery.
+- [x] `python -m sql.cargar_bigquery --proyecto X --validar` termina en `VALIDACIÓN: OK`.
+- [x] `pedidos_analitica` tiene la misma cantidad de filas y la misma tasa de `pedido_retrasado` que `build_features(...)` de `src/` con anchor `aprobacion`.
+- [x] Los compañeros con acceso al proyecto pueden consultar la vista desde la consola de BigQuery.
+
+### Evidencia de la validación (26/10/2026)
+
+Base cargada el 06/10/2026 en el proyecto `olist-datacraft`, dataset `olist`. Las consultas de `03_validaciones.sql` se volvieron a correr el 26/10/2026 sobre esa base:
+
+| Prueba | Esperado | Obtenido | Resultado |
+|---|---|---|---|
+| Filas por tabla (9 tablas) | Cifras de Kaggle, versión 2 | Las 9 coinciden (orders 99.441, order_items 112.650, customers 99.441, sellers 3.095, products 32.951, order_payments 103.886, order_reviews 99.224, geolocation 1.000.163, traducción 71) | OK |
+| Llaves primarias únicas (5) | Sin duplicados | Sin duplicados | OK |
+| Huérfanos de llaves foráneas (5) | 0 | 0 en las 5 | OK |
+| Entregados sin filtro de período | 96.470 · 6,77 % tarde | 96.470 · 6,77 % | OK |
+| Entregados en el período de estudio | Igual a `build_target()` | 96.203 · 6,79 % | OK |
+| Vista `pedidos_analitica` | Igual a `build_features(..., anchor="aprobacion")` con target: 96.189 · 6,79 % | 96.189 · 6,79 % | OK |
+
+El equipo tiene acceso de lectura al proyecto con sus cuentas de Google. En el sandbox las tablas vencen a los 60 días: esta carga vence el 05/12/2026, y para seguir usándola hay que recargar con `cargar_bigquery.py` o activar facturación.
 
 ## Decisiones
 
