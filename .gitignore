@@ -11,6 +11,8 @@ data/**
 *.xlsx
 *.pdf
 *.docx
+# Excepción: los pedidos ya puntuados del modo web de la app (python -m app.datos_web)
+!app/datos_web/*.parquet
 
 # --- Salidas generadas ---
 reports/*.json
@@ -32,3 +34,8 @@ venv/
 .agents/
 .DS_Store
 Thumbs.db
+
+# --- MLflow: corridas locales de python -m src.training --mlflow ---
+mlruns/
+mlartifacts/
+mlflow.db

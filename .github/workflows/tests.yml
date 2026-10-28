@@ -1,0 +1,26 @@
+# Corre los tests en cada push y en cada PR a developer o main.
+# No necesita los CSV de Kaggle ni el modelo: los tests usan datos y artefactos sintéticos.
+name: Tests
+
+on:
+  push:
+    branches: [developer, main]
+  pull_request:
+    branches: [developer, main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]  # el rango que indica el README
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Correr los tests
+        run: python -m pytest -q

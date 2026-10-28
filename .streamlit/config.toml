@@ -1,0 +1,21 @@
+# Tema de la app con los colores de DataCraft: azul marino, crema y naranja.
+# Es el modo claro; el botón de la cabecera cambia estas opciones en caliente
+# (ver PALETTES en app/estilos.py), así que tienen que coincidir con la paleta "light".
+[theme]
+base = "light"
+primaryColor = "#B4541A"
+backgroundColor = "#FBF8F2"
+secondaryBackgroundColor = "#F1EADC"
+textColor = "#13294B"
+borderColor = "#E6DECF"
+dataframeBorderColor = "#E6DECF"
+dataframeHeaderBackgroundColor = "#F1EADC"
+codeBackgroundColor = "#F1EADC"
+linkColor = "#B4541A"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

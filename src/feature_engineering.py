@@ -13,14 +13,18 @@ El test anti-fuga recorre FEATURE_BUILDERS y falla si alguna usa columnas prohib
 """
 
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Callable
 
+import holidays
 import numpy as np
 import pandas as pd
 
+
 from src.data_loading import RAW_DIR
 from src.features import (
+    APPROVED_COL,
     CATEGORICAL_FEATURES,
     DEFAULT_ANCHOR,
     PREDICTION_TIME_COL,
@@ -31,10 +35,13 @@ from src.target import TARGET_COL, build_target
 
 GEOLOCATION_FILE = "olist_geolocation_dataset.csv"
 EARTH_RADIUS_KM = 6371.0
+ZIP_PREFIX_LENGTH = 5
 # Extremos del territorio de Brasil (con un margen chico), en grados
 BRAZIL_LAT_RANGE = (-33.8, 5.3)
 BRAZIL_LNG_RANGE = (-74.0, -34.7)
 MIN_SELLER_HISTORY = 5  # con menos pedidos previos la tasa del vendedor es ruido
+SELLER_LOAD_WINDOWS_DAYS = (7, 14, 30)
+HOLIDAY_LOOKAHEAD_DAYS = 7
 
 REGIONS = {
     "Norte": ["AC", "AM", "AP", "PA", "RO", "RR", "TO"],
@@ -69,6 +76,16 @@ def load_geolocation(raw_dir: Path = RAW_DIR) -> pd.DataFrame:
     return pd.read_csv(path, dtype={"geolocation_zip_code_prefix": str})
 
 
+def normalize_zip_prefix(zip_prefix: pd.Series) -> pd.Series:
+    """Prefijo postal como texto de 5 dígitos con ceros a la izquierda.
+
+    En los CSV del GitHub de Olist la geolocalización trae "01037" y clientes y
+    vendedores traen 1037: sin normalizar, el cruce falla en silencio y la
+    distancia queda vacía para todos los prefijos que empiezan con 0.
+    """
+    return zip_prefix.astype(str).str.zfill(ZIP_PREFIX_LENGTH)
+
+
 def _zip_centroids(geolocation: pd.DataFrame) -> pd.DataFrame:
     """Lat/lng mediana por prefijo de código postal (el geolocation trae varias filas por prefijo).
 
@@ -81,6 +98,7 @@ def _zip_centroids(geolocation: pd.DataFrame) -> pd.DataFrame:
     inside_brazil = lat.between(*BRAZIL_LAT_RANGE) & lng.between(*BRAZIL_LNG_RANGE)
     return (
         geolocation.loc[inside_brazil]
+        .assign(geolocation_zip_code_prefix=lambda d: normalize_zip_prefix(d["geolocation_zip_code_prefix"]))
         .groupby("geolocation_zip_code_prefix")[["geolocation_lat", "geolocation_lng"]]
         .median()
         .rename(columns={"geolocation_lat": "lat", "geolocation_lng": "lng"})
@@ -106,8 +124,12 @@ def route_features(context: FeatureContext) -> pd.DataFrame:
     tables = context.tables
     centroids = _zip_centroids(tables["geolocation"])
     orders = tables["orders"][["order_id", "customer_id"]]
-    customers = tables["customers"][["customer_id", "customer_zip_code_prefix", "customer_state"]]
-    sellers = tables["sellers"][["seller_id", "seller_zip_code_prefix", "seller_state"]]
+    customers = tables["customers"][["customer_id", "customer_zip_code_prefix", "customer_state"]].assign(
+        customer_zip_code_prefix=lambda d: normalize_zip_prefix(d["customer_zip_code_prefix"])
+    )
+    sellers = tables["sellers"][["seller_id", "seller_zip_code_prefix", "seller_state"]].assign(
+        seller_zip_code_prefix=lambda d: normalize_zip_prefix(d["seller_zip_code_prefix"])
+    )
 
     pairs = (
         tables["items"][["order_id", "seller_id"]].drop_duplicates()
@@ -201,6 +223,120 @@ def seller_history_features(context: FeatureContext) -> pd.DataFrame:
     )
 
 
+def seller_recent_load_features(context: FeatureContext) -> pd.DataFrame:
+    """Pedidos aprobados para el vendedor principal en ventanas previas.
+
+    Para cada ventana de 7, 14 y 30 días se usa
+    [prediction_time - ventana, prediction_time). Así se excluyen el pedido
+    actual y los pedidos aprobados exactamente en el mismo instante. No usa
+    información de entrega ni el resultado de otros pedidos.
+    """
+    tables = context.tables
+    main_seller = _main_item(tables)[["order_id", "seller_id"]]
+
+    events = (
+        tables["orders"][["order_id", APPROVED_COL]]
+        .merge(main_seller, on="order_id", how="inner")
+        .assign(
+            **{
+                APPROVED_COL: lambda data: pd.to_datetime(
+                    data[APPROVED_COL], errors="coerce"
+                )
+            }
+        )
+        .dropna(subset=[APPROVED_COL, "seller_id"])
+    )
+
+    queries = (
+        context.base[["order_id", PREDICTION_TIME_COL]]
+        .merge(main_seller, on="order_id", how="left")
+        .assign(
+            **{
+                PREDICTION_TIME_COL: lambda data: pd.to_datetime(
+                    data[PREDICTION_TIME_COL], errors="coerce"
+                )
+            }
+        )
+        .reset_index(drop=True)
+    )
+
+    result = queries[["order_id"]].copy()
+    for days in SELLER_LOAD_WINDOWS_DAYS:
+        result[f"seller_recent_approved_orders_{days}d"] = 0
+
+    for seller_id, indexes in queries.groupby("seller_id").groups.items():
+        approved = np.sort(
+            events.loc[
+                events["seller_id"].eq(seller_id), APPROVED_COL
+            ].to_numpy(dtype="datetime64[ns]")
+        )
+        times = queries.loc[indexes, PREDICTION_TIME_COL].to_numpy(
+            dtype="datetime64[ns]"
+        )
+
+        for days in SELLER_LOAD_WINDOWS_DAYS:
+            start = times - np.timedelta64(days, "D")
+            column = f"seller_recent_approved_orders_{days}d"
+
+            approved_before = np.searchsorted(
+                approved, times, side="left"
+            )
+            approved_from_start = np.searchsorted(
+                approved, start, side="left"
+            )
+            result.loc[indexes, column] = (
+                approved_before - approved_from_start
+            )
+
+    return result
+
+
+def holiday_features(context: FeatureContext) -> pd.DataFrame:
+    """Feriados nacionales al aprobar y durante los siete días siguientes.
+
+    is_national_holiday indica si la aprobación ocurrió en un feriado.
+    n_national_holidays_next_7d cuenta los feriados nacionales desde el día
+    posterior a la aprobación hasta los siguientes siete días inclusive.
+
+    El calendario se conoce de antemano, por lo que no representa fuga de
+    información. No incorpora feriados estatales, municipales ni Carnaval.
+    """
+    prediction_date = pd.to_datetime(
+        context.base[PREDICTION_TIME_COL], errors="coerce"
+    ).dt.normalize()
+    prediction_days = prediction_date.dt.date
+    years_in_data = prediction_date.dropna().dt.year
+
+    if years_in_data.empty:
+        holiday_dates = set()
+    else:
+        first_year = int(years_in_data.min())
+        last_year = int(years_in_data.max())
+        holiday_dates = set(
+            holidays.country_holidays(
+                "BR",
+                years=list(range(first_year, last_year + 2)),
+            )
+        )
+
+    future_holidays = [
+        sum(
+            day + timedelta(days=offset) in holiday_dates
+            for offset in range(1, HOLIDAY_LOOKAHEAD_DAYS + 1)
+        )
+        if pd.notna(day)
+        else 0
+        for day in prediction_days
+    ]
+
+    return context.base[["order_id"]].assign(
+        is_national_holiday=(
+            prediction_days.isin(holiday_dates).astype(int).to_numpy()
+        ),
+        n_national_holidays_next_7d=future_holidays,
+    )
+
+
 FEATURE_BUILDERS: list[FeatureBuilder] = [
     FeatureBuilder(
         "ruta",
@@ -213,6 +349,23 @@ FEATURE_BUILDERS: list[FeatureBuilder] = [
         "historial_vendedor",
         seller_history_features,
         numeric=("seller_prev_orders", "seller_prev_late_rate"),
+    ),
+    FeatureBuilder(
+        "carga_reciente_vendedor",
+        seller_recent_load_features,
+        numeric=(
+            "seller_recent_approved_orders_7d",
+            "seller_recent_approved_orders_14d",
+            "seller_recent_approved_orders_30d",
+        ),
+    ),
+    FeatureBuilder(
+        "feriados",
+        holiday_features,
+        numeric=(
+            "is_national_holiday",
+            "n_national_holidays_next_7d",
+        ),
     ),
 ]
 

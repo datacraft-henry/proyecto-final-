@@ -8,9 +8,12 @@ from src.feature_engineering import (
     build_model_dataset,
     haversine_km,
     model_feature_lists,
+    normalize_zip_prefix,
     product_features,
     route_features,
     seller_history_features,
+    seller_recent_load_features,
+    holiday_features,
 )
 from src.features import PREDICTION_TIME_COL, leaky_columns
 from src.target import TARGET_COL
@@ -109,6 +112,38 @@ def _history(tables):
     return seller_history_features(FeatureContext(base=base, tables=tables)).set_index("order_id")
 
 
+def _seller_load(tables):
+    base = tables["orders"][["order_id"]].assign(
+        **{PREDICTION_TIME_COL: tables["orders"]["order_approved_at"]}
+    )
+    return seller_recent_load_features(
+        FeatureContext(base=base, tables=tables)
+    ).set_index("order_id")
+
+
+def _holiday_calendar(tables):
+    base = pd.DataFrame(
+        {
+            "order_id": [
+                "feriado_actual",
+                "previo_navidad",
+                "cruce_anio",
+                "dia_normal",
+            ],
+            PREDICTION_TIME_COL: [
+                pd.Timestamp("2018-09-07 10:00"),
+                pd.Timestamp("2018-12-24 10:00"),
+                pd.Timestamp("2018-12-27 10:00"),
+                pd.Timestamp("2018-09-08 10:00"),
+            ],
+        }
+    )
+
+    return holiday_features(
+        FeatureContext(base=base, tables=tables)
+    ).set_index("order_id")
+
+
 def test_seller_history_counts_only_orders_delivered_before_prediction():
     history = _history(_seller_tables(12))
     # o4 se predice el día 4; solo o0 (entregado el día 3) llegó antes
@@ -118,6 +153,84 @@ def test_seller_history_counts_only_orders_delivered_before_prediction():
     assert pd.isna(history.loc["o4", "seller_prev_late_rate"])
     late_order = f"o{MIN_SELLER_HISTORY + 3}"
     assert history.loc[late_order, "seller_prev_late_rate"] == pytest.approx(0.6)
+
+
+def test_seller_recent_load_counts_only_previous_windows():
+    load = _seller_load(_seller_tables(35))
+
+    for days in (7, 14, 30):
+        feature = f"seller_recent_approved_orders_{days}d"
+        assert load.loc["o0", feature] == 0
+        assert load.loc["o4", feature] == 4
+
+    assert load.loc["o7", "seller_recent_approved_orders_7d"] == 7
+
+    assert load.loc["o14", "seller_recent_approved_orders_7d"] == 7
+    assert load.loc["o14", "seller_recent_approved_orders_14d"] == 14
+
+    assert load.loc["o30", "seller_recent_approved_orders_7d"] == 7
+    assert load.loc["o30", "seller_recent_approved_orders_14d"] == 14
+    assert load.loc["o30", "seller_recent_approved_orders_30d"] == 30
+
+    assert load.loc["o31", "seller_recent_approved_orders_7d"] == 7
+    assert load.loc["o31", "seller_recent_approved_orders_14d"] == 14
+    assert load.loc["o31", "seller_recent_approved_orders_30d"] == 30
+
+
+def test_seller_history_builder_is_registered():
+    builders = {builder.name: builder for builder in FEATURE_BUILDERS}
+
+    assert "historial_vendedor" in builders
+    assert builders["historial_vendedor"].numeric == (
+        "seller_prev_orders",
+        "seller_prev_late_rate",
+    )
+
+    numeric, _ = model_feature_lists()
+    assert {"seller_prev_orders", "seller_prev_late_rate"} <= set(numeric)
+
+
+def test_seller_recent_load_does_not_use_delivery_outcomes():
+    tables = _seller_tables(12)
+    before = _seller_load(tables)
+
+    changed_orders = tables["orders"].assign(
+        order_delivered_customer_date=pd.Timestamp("2099-01-01"),
+        order_estimated_delivery_date=pd.Timestamp("2016-01-01"),
+    )
+    after = _seller_load({**tables, "orders": changed_orders})
+
+    pd.testing.assert_frame_equal(before, after)
+
+
+def test_holiday_features_marks_current_and_future_holidays(full_tables):
+    result = _holiday_calendar(full_tables)
+
+    assert result.loc["feriado_actual", "is_national_holiday"] == 1
+    assert result.loc["feriado_actual", "n_national_holidays_next_7d"] == 0
+
+    assert result.loc["previo_navidad", "is_national_holiday"] == 0
+    assert result.loc["previo_navidad", "n_national_holidays_next_7d"] == 1
+
+    assert result.loc["cruce_anio", "n_national_holidays_next_7d"] == 1
+
+    assert result.loc["dia_normal", "is_national_holiday"] == 0
+    assert result.loc["dia_normal", "n_national_holidays_next_7d"] == 0
+
+
+def test_holiday_features_do_not_use_delivery_outcomes(full_tables):
+    before = _holiday_calendar(full_tables)
+
+    changed_tables = {
+        **full_tables,
+        "orders": full_tables["orders"].assign(
+            order_delivered_customer_date=pd.Timestamp("2099-01-01"),
+            order_estimated_delivery_date=pd.Timestamp("2016-01-01"),
+        ),
+    }
+    after = _holiday_calendar(changed_tables)
+
+    pd.testing.assert_frame_equal(before, after)
 
 
 def test_seller_history_ignores_future_outcomes():
@@ -137,7 +250,7 @@ def test_seller_history_ignores_future_outcomes():
 
 def test_route_and_product_builders_return_one_row_per_order(full_tables):
     context, _ = _context(full_tables)
-    for build in (route_features, product_features):
+    for build in (route_features, product_features, seller_recent_load_features, holiday_features):
         assert build(context)["order_id"].is_unique
 
 
@@ -159,3 +272,24 @@ def test_zip_without_valid_coordinates_has_no_distance(full_tables):
     _, dataset = _context({**full_tables, "geolocation": geolocation})
     assert pd.isna(dataset.loc["o3", "max_distance_km"])  # cliente en 20000
     assert dataset.loc["o2", "max_distance_km"] == pytest.approx(0)
+
+
+def test_zip_prefixes_without_leading_zeros_still_match(full_tables):
+    """Los CSV del GitHub de Olist traen 1000 en vez de "01000": la distancia tiene que ser la misma."""
+    as_numbers = {
+        **full_tables,
+        "customers": full_tables["customers"].assign(customer_zip_code_prefix=[1000, 1000, 20000]),
+        "sellers": full_tables["sellers"].assign(seller_zip_code_prefix=[1000, 20000]),
+        "geolocation": full_tables["geolocation"].assign(geolocation_zip_code_prefix=[1000, 1000, 20000]),
+    }
+    mixed = {**full_tables, "geolocation": as_numbers["geolocation"]}
+    _, expected = _context(full_tables)
+    for tables in (as_numbers, mixed):
+        _, dataset = _context(tables)
+        pd.testing.assert_series_equal(dataset["max_distance_km"], expected["max_distance_km"])
+    assert expected["max_distance_km"].notna().all()
+
+
+def test_normalize_zip_prefix_pads_to_five_digits():
+    result = normalize_zip_prefix(pd.Series([1037, "1037", "01037", 20000]))
+    assert result.tolist() == ["01037", "01037", "01037", "20000"]

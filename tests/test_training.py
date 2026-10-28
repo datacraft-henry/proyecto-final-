@@ -72,6 +72,13 @@ def test_selected_features_drop_month_and_add_distance():
     assert "promised_days" in numeric
 
 
+def test_selected_features_add_only_upcoming_holidays_from_sprint2():
+    numeric, _ = selected_feature_lists()
+    assert "n_national_holidays_next_7d" in numeric
+    assert "is_national_holiday" not in numeric
+    assert not any(c.startswith("seller_recent_approved_orders") for c in numeric)
+
+
 def test_compare_models_end_to_end(dataset):
     report, fitted = compare_models(dataset)
     assert report["selected_model"] in MAIN_CANDIDATES

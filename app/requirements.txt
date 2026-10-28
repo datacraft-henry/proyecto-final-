@@ -1,0 +1,10 @@
+# Dependencias de la app publicada en Streamlit Community Cloud (modo web, ver app/datos_web.py).
+# Cloud usa este archivo, el de la carpeta de la app, en lugar del requirements.txt de la raíz:
+# así no instala MLflow, Jupyter ni la API, que la app no necesita.
+streamlit==1.65.0  # la versión con la que se armó la app (st.iframe, pestañas con on_change)
+pandas>=2.0
+numpy>=1.24
+scikit-learn==1.7.2
+joblib>=1.3
+holidays>=0.40
+pyarrow>=14
