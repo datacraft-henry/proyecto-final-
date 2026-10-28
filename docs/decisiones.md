@@ -129,6 +129,7 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 - **Decisión:** el recomendador de vendedores deja de ser un prototipo y pasa a ser el sistema de recomendación del proyecto. Ordena a los vendedores por el riesgo medio que el clasificador calibrado (punto 9 y 10) predice para sus pedidos, sin reentrenarlo. La tasa histórica suavizada y la popularidad quedan como baselines.
 - **Por qué contextual:** el 96,9 % de los clientes compra una sola vez, así que no hay historial por cliente para un filtrado colaborativo. Se recomienda según la categoría que busca el cliente y su estado de destino.
 - **Evaluación:** en el período de test del clasificador (27/05 al 29/08/2018), con Precision@K, Recall@K y el retraso de los vendedores mostrados. Con K = 3, el retraso de los recomendados es 2,58 %, contra 2,79 % historial, 2,75 % popularidad y 3,14 % azar. La ventaja sobre el historial y sobre la popularidad no es significativa, y se dice así.
+- **Métricas del recomendador (K = 3):** Precision@3 = 71,1 % y Recall@3 = 28,0 %.
 - **Implementación:** `src/recomendador.py` (`preparar_clasificador`, `puntaje_vendedores`, `recomendar`, `evaluar_recomendacion`), `python -m src.recomendador`, tests en `tests/test_recomendador.py`. Detalle en `docs/recomendador.md`. La pestaña "Vendedores recomendados" de Streamlit usa `recomendar`.
 
 ## 13. Días a prometer por ruta: evaluación complementaria
