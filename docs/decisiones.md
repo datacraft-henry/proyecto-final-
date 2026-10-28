@@ -7,11 +7,11 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 | Acordada | El equipo la tomó y se aplica |
 | Pendiente | Hay una propuesta, falta confirmar |
 
-## 1. Alcance: el centro del proyecto es el clasificador de retrasos
+## 1. Alcance: clasificador de retrasos y recomendador contextual
 
-- **Estado:** Pendiente de confirmar con el mentor.
-- **Decisión:** el entregable principal es un clasificador binario que estima si un pedido va a llegar después del día prometido. El análisis comercial (ventas, categorías, vendedores) queda como anexo descriptivo, no como un segundo modelo.
-- **Por qué:** es el problema con target claro, datos suficientes y una acción concreta (priorizar seguimiento logístico). Dos modelos en paralelo dividen el tiempo del equipo.
+- **Estado:** Acordada.
+- **Decisión:** el clasificador binario que estima si un pedido llegará después del día prometido es el núcleo del proyecto. La misma señal de riesgo tiene dos usos: después de aprobar el pago, prioriza qué pedidos revisar; antes de comprar, ordena vendedores por riesgo para la categoría y el estado del cliente. No se entrena un segundo modelo independiente para recomendar.
+- **Por qué:** el clasificador tiene un target claro, datos suficientes y una acción concreta. El recomendador reutiliza esa señal para atender el caso de clientes sin historial de compra. El detalle de su evaluación está en `docs/recomendador.md`.
 
 ## 2. Target: `pedido_retrasado` por día calendario
 
@@ -46,8 +46,8 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 - **Estado:** Acordada.
 - **Decisión:** se entrena con pedidos más viejos y se evalúa con los más nuevos, ordenados por la fecha del momento de predicción. Nunca split aleatorio. Las transformaciones se ajustan solo con train.
 - **Métricas:** matriz de confusión, precision, recall, F1, ROC-AUC y PR-AUC. El umbral se elige con validación, no con test.
-- **Pendiente:** el baseline actual divide solo en train y test y reporta las métricas con umbral fijo 0,5 directo en test. Falta separar un conjunto de validación (entre train y test, también por fecha) para elegir el umbral ahí y dejar el test solo para la evaluación final.
-- **Actualización (2026-10-06):** `temporal_three_way_split` en `src/validation.py` separa train, validación y test por fecha. Se usa en `src/umbral.py` (decisión 9). Queda pendiente la validación cruzada temporal con varios cortes.
+- **Situación inicial (superada):** el baseline dividía solo en train y test y usaba un umbral fijo de 0,5 directo sobre test.
+- **Implementación actual:** `temporal_three_way_split` en `src/validation.py` separa train, validación y test por fecha. `temporal_cv_folds` en `src/training.py` agrega cuatro cortes temporales para comparar candidatos. La calibración y los niveles se fijan con validación; el test queda reservado para la evaluación final.
 
 ## 6. Flujo de trabajo con Git
 
@@ -78,11 +78,11 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 
 ## 9. Calibración y niveles de riesgo
 
-- **Estado:** Propuesta (tarea 3). Se ratifica en el daily.
+- **Estado:** Acordada.
 - **Problema:** el baseline entrena con `class_weight="balanced"`. Ordena bien los pedidos (ROC-AUC 0,73 en validación), pero sus probabilidades están infladas: predice 48,6 % de riesgo medio cuando la tasa real de validación es 6,8 %. Con el umbral fijo de 0,5 alerta sobre casi la mitad de los pedidos.
 - **Decisión:**
   1. **Tres cohortes por fecha:** train (ene 2017 a mar 2018), validación (mar a may 2018) y test (fines de may a ago 2018). Calibración, cortes y umbral se eligen en validación; el test se usa una sola vez.
-  2. **Recalibración de Platt** ajustada en validación. En validación el riesgo medio queda en 6,8 % (igual a la tasa real). En test predice 7,1 % frente a 3,5 % real, porque la prevalencia cae a la mitad: ninguna calibración fija aguanta un cambio así.
+  2. **Recalibración de Platt** ajustada en validación. En validación el riesgo medio queda en 6,8 % (igual a la tasa real). En el test del modelo final promedia 9,3 % frente a 3,5 % real, porque la prevalencia cae a la mitad: ninguna calibración fija aguanta un cambio así.
   3. **Niveles de riesgo por volumen de pedidos, no por probabilidad:** alto = 5 % de pedidos con más riesgo, medio = 15 % siguiente, bajo = el resto. Los cortes se fijan en validación y se aplican sin cambios. Así el volumen de alertas es estable aunque cambie la prevalencia.
   4. **Umbral por costos** (1 / (1 + r), con r = costo de un falso negativo / costo de un falso positivo) solo como análisis de sensibilidad con r = 5, 10 y 20, no como regla única.
 - **Resultado en test:**
@@ -107,10 +107,10 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 
 ## 10. Modelo principal: regresión logística con selección de features
 
-- **Estado:** Propuesta (parte 2). Se ratifica en el daily.
+- **Estado:** Acordada.
 - **Decisión:** el modelo principal es una regresión logística balanceada con las variables del baseline sin `purchase_month`, más la distancia cliente-vendedor (`max_distance_km`) y, desde el Sprint 2, los feriados nacionales de los 7 días siguientes a la aprobación (`n_national_holidays_next_7d`). Se elige con validación cruzada temporal de 4 tramos sobre train + validación, por PR-AUC medio, y ante un empate (menos de 0,01) gana el modelo más simple.
 - **Resultado en test:** ROC-AUC 0,707 y PR-AUC 0,073, contra 0,700 y 0,072 del baseline. Los feriados suben el PR-AUC de la validación cruzada de 0,209 a 0,212 y no cambian el test.
-- **Modelo final (2026-10-08):** se reentrena con train + validación en `src/umbral.py` y se guarda calibrado para la API. En test ordena igual que el de train (ROC-AUC 0,707). Detalle en `docs/decisiones_modelos.md`.
+- **Modelo final (actualización 2026-10-20):** se reentrena con train + validación en `src/umbral.py`, incorpora los feriados de los siete días siguientes y se guarda calibrado para la API. En test ordena igual que el de train (ROC-AUC 0,707). Detalle en `docs/decisiones_modelos.md`.
 - **Por qué no árboles:** empatan en la validación cruzada pero en test caen a ROC-AUC 0,58, porque Olist acortó los plazos prometidos y los árboles no extrapolan ese cambio.
 - **Implementación:** `src/feature_engineering.py` (features de ruta, producto e historial del vendedor, extensible con `FEATURE_BUILDERS`) y `src/training.py` (`python -m src.training`). Detalle y tabla completa en `docs/decisiones_modelos.md`.
 
@@ -125,8 +125,17 @@ Registro corto de lo que acordamos y por qué. Cada decisión nueva se agrega ab
 
 ## 12. Sistema de recomendación: vendedores ordenados por el clasificador
 
-- **Estado:** Propuesta del equipo. La decide Nelson, el PO, en la Demo 2 del 28/10.
+- **Estado:** Acordada.
 - **Decisión:** el recomendador de vendedores deja de ser un prototipo y pasa a ser el sistema de recomendación del proyecto. Ordena a los vendedores por el riesgo medio que el clasificador calibrado (punto 9 y 10) predice para sus pedidos, sin reentrenarlo. La tasa histórica suavizada y la popularidad quedan como baselines.
 - **Por qué contextual:** el 96,9 % de los clientes compra una sola vez, así que no hay historial por cliente para un filtrado colaborativo. Se recomienda según la categoría que busca el cliente y su estado de destino.
 - **Evaluación:** en el período de test del clasificador (27/05 al 29/08/2018), con Precision@K, Recall@K y el retraso de los vendedores mostrados. Con K = 3, el retraso de los recomendados es 2,58 %, contra 2,79 % historial, 2,75 % popularidad y 3,14 % azar. La ventaja sobre el historial y sobre la popularidad no es significativa, y se dice así.
-- **Implementación:** `src/recomendador.py` (`preparar_clasificador`, `puntaje_vendedores`, `recomendar`, `evaluar_recomendacion`), `python -m src.recomendador`, tests en `tests/test_recomendador.py`. Detalle en `docs/recomendador.md`. La pestaña en la app de Streamlit la suma Cristian con `recomendar`.
+- **Métricas del recomendador (K = 3):** Precision@3 = 71,1 % y Recall@3 = 28,0 %.
+- **Implementación:** `src/recomendador.py` (`preparar_clasificador`, `puntaje_vendedores`, `recomendar`, `evaluar_recomendacion`), `python -m src.recomendador`, tests en `tests/test_recomendador.py`. Detalle en `docs/recomendador.md`. La pestaña "Vendedores recomendados" de Streamlit usa `recomendar`.
+
+## 13. Días a prometer por ruta: evaluación complementaria
+
+- **Estado:** Acordada como análisis complementario. No modifica el modelo, la API ni la app.
+- **Decisión:** para cada ruta entre el estado del vendedor principal y el estado del cliente, se calcula con train el percentil 95 de los días reales de entrega. Si una ruta no tiene historial, se usa una promesa global calculada también con train.
+- **Resultado:** en los 19.293 pedidos de test, los incumplimientos de la fecha original fueron 673 (3,49 %) y con la promesa P95 por ruta fueron 242 (1,25 %). La reducción neta es de 431 incumplimientos de la fecha comunicada y el cambio mediano de la promesa es de 6 días.
+- **Límite:** no acelera la entrega física; reduce incumplimientos principalmente porque extiende la fecha prometida. La comparación contra sumar la misma cantidad de días a todas las rutas debe mantenerse visible al comunicar el resultado.
+- **Implementación:** `src/promesas_ruta.py`, `tests/test_promesas_ruta.py` y `docs/promesas_ruta.md`.
